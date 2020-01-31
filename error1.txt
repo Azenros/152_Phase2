@@ -1,0 +1,9 @@
+function test1;
+beginparams
+endparams
+beginlocals
+a_2
+2n : integer;
+endlocals
+beginbody
+endbody
