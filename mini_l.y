@@ -1,5 +1,6 @@
 %{
-  Prologue
+  int line = 1;
+  int space = 0;
 %}
 
 Bison declarations
@@ -13,7 +14,7 @@ Bison declarations
    function -> FUNCTION ident parameters locals parameters locals parameters
 
    locals -> 
-   declarations -> idents colon integer
+   declarations -> idents COLON INTEGER
    idents -> ident between ident | ident exp ident
    ident -> number
    between -> comma | assign | and | or

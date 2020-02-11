@@ -1,8 +1,7 @@
 %{
   void separate();
   int line = 1;
-  int space = 0;
-  int tabspaces = 8;
+  int space = 1;
 %}
 
 DIGIT [0-9]
@@ -14,12 +13,12 @@ MULT [*]
 DIV [/]
 MOD [%]
 SPACE [ ]
-ERROR [^0-9A-Za-z)(+*/%\n\t-]
-
+ERROR [^a-zA-Z0-9:;+*)/(%\n\t,=<> -]
 %%
+
 "\n" {line++; space = 0;}
-"\t".* {yyless(1);space += tabspaces;}
 "##".* {line++; space = 0;}
+"\t" {space += 4;}
 "function".* {yyless(9); space += 9; printf("FUNCTION\n"); }
 "beginparams".* {yyless(11); space += 11; printf("BEGIN_PARAMS\n"); }
 "endparams".* {yyless(9); space += 9; printf("END_PARAMS\n"); }
@@ -55,26 +54,26 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 "<=" {printf("LTE\n"); space += 2; }
 ">=" {printf("GTE\n"); space += 2; }
 ";" {printf("SEMICOLON\n"); space++; }
-"(" {printf("L_PAREN\n"); space++; }
-")" {printf("R_PAREN\n"); space++; }
-"[" {printf("L_SQUARE_BRACKET\n"); space++; }
-"]" {printf("R_SQUARE_BRACKET\n"); space++; }
+"(".* {yyless(1); printf("L_PAREN\n"); space++; }
+")".* {yyless(1); printf("R_PAREN\n"); space++; }
+"[".* {yyless(1); printf("L_SQUARE_BRACKET\n"); space++; }
+"]".* {yyless(1); printf("R_SQUARE_BRACKET\n"); space++; }
 ":=" {printf("ASSIGN\n"); space += 2; }
 ":" {printf("COLON\n"); space++; }
 "," {printf("COMMA\n"); space++; }
 
+{SPACE}+ {yyless(1); space++;}
+{DIGIT}+ {printf("NUMBER %s\n", yytext); space += yyleng; }
+{DIGIT}+{USCORE}?{LETTER}+ {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
+{USCORE}({LETTER}*{DIGIT}*)* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
+.*+{USCORE} {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1); }
+({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {printf("IDENT %s\n", yytext); space += yyleng; }
 {SUB} {printf("SUB\n"); space++; }
 {ADD} {printf("ADD\n"); space++; }
 {MULT} {printf("MULT\n"); space++; }
 {DIV} {printf("DIV\n"); space++; }
 {MOD} {printf("MOD\n"); space++; } 
-{SPACE}+ {yyless(1); space++; }
-{DIGIT}+ {printf("NUMBER %s\n", yytext); }
-{DIGIT}+{USCORE}?{LETTER}+ {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
-{USCORE}({LETTER}*{DIGIT}*)* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
-({LETTER}?{DIGIT}?)*{USCORE}+ {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1); }
-{ERROR} {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", line, space, yytext); exit(1); }
-({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {yyless(yyleng); printf("IDENT %s\n", yytext); space += yyleng; }
+{ERROR}.* {printf("Error at line %d, column %d: unrecognized symbol \"%c\" \n", line, space, yytext[0]); exit(1); }
 
 
 %%

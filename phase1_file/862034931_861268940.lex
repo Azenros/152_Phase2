@@ -63,19 +63,18 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 ":" {printf("COLON\n"); space++; }
 "," {printf("COMMA\n"); space++; }
 
+{SPACE}+ {yyless(1); space++; }
+{DIGIT}+ {printf("NUMBER %s\n", yytext); }
+{DIGIT}+{USCORE}?{LETTER}+ {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
+{USCORE}({LETTER}*{DIGIT}*)* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
+.*+{USCORE} {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1); }
+{ERROR} {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", line, space, yytext); exit(1); }
+({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {printf("IDENT %s\n", yytext); space += yyleng; }
 {SUB} {printf("SUB\n"); space++; }
 {ADD} {printf("ADD\n"); space++; }
 {MULT} {printf("MULT\n"); space++; }
 {DIV} {printf("DIV\n"); space++; }
 {MOD} {printf("MOD\n"); space++; } 
-{SPACE}+ {yyless(1); space++; }
-{DIGIT}+ {printf("NUMBER %s\n", yytext); }
-{DIGIT}+{USCORE}?{LETTER}+ {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
-{USCORE}({LETTER}*{DIGIT}*)* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1); }
-({LETTER}?{DIGIT}?)*{USCORE}+ {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1); }
-{ERROR} {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", line, space, yytext); exit(1); }
-({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {yyless(yyleng); printf("IDENT %s\n", yytext); space += yyleng; }
-
 
 %%
 
