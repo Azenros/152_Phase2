@@ -1,32 +1,280 @@
 %{
+  #include <iostream>
+  using namespace std;  
+
   int line = 1;
   int space = 0;
+  //scroll down for full grammar
 %}
 
-Bison declarations
 
 %%
+start:
+	functions { cout << "Start -> functions\n"; }
+;
+
+functions:
+	function functions { 
+		cout << "functions -> function functions\n"; 
+		}
+	| %empty { 
+		cout << "functions -> epsilon\n"; 
+		}
+;
+
+function:
+	FUNCTION ident SEMICOLON parameters declarations parameters declarations parameters statements parameters {
+		cout << "function -> FUNCTION ident SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
+		}
+;
+
+parameters:
+	BEGIN_PARAMS { 
+		cout << "parameters -> BEGIN_PARAMS\n"; 
+		}
+	| END_PARAMS BEGIN_LOCALS { 
+		cout << "parameters -> END_PARAMS BEGIN_LOCALS\n"; 
+		}
+	| END_LOCALS BEGIN_BODY { 
+		cout << "parameters -> END_LOCALS BEGIN_BODY\n"; 
+		}
+	| END_BODY { 
+		cout << "parameters -> END_BODY\n"; 
+		}
+;
+
+declarations:
+	declaration SEMICOLON declarations {
+		cout << "declarations -> declaration SEMICOLON declarations\n"; 
+		}
+;
+
+declaration:
+	identify COLON INTEGER {
+		cout << "declaration -> identify COLON INTEGER\n"; 
+		}
+	| identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+		cout << "declaration -> identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"; 
+		}
+;
+
+
+statements:
+	%empty
+	| statement SEMICOLON statements {
+		cout << "statements -> statement SEMICOLON statements\n";
+		}
+;
+
+statement:
+	var ASSIGN expression {
+		cout << "statement -> var ASSIGN expression\n";
+		}
+	| IF OR_expr THEN statements ENDIF {
+		cout << "statement -> IF OR_expr THEN statements ENDIF\n";
+		}
+	| WHILE OR_expr statements ENDLOOP {
+		cout << "statement -> WHILE OR_expr statements ENDLOOP\n";
+		}
+	| DO BEGINLOOP statements ENDLOOP WHILE OR_expr {
+		cout << "statement -> DO BEGINLOOP statements ENDLOOP WHILE OR_expr\n";
+		}
+	| FOR var ASSIGN  {
+		cout << "statement -> FOR var ASSIGN\n";
+		}
+	| READ vars {
+		cout << "statement -> READ vars\n";
+		}
+	| WRITE vars {
+		cout << "statement -> WRITE vars\n";
+		}
+	| CONTINUE {
+		cout << "statement -> CONTINUE\n";
+		}
+	| RETURN AS_expr {
+		cout << "statement -> RETURN AS_expr\n";
+		}
+		
+;
+
+OR_expr:
+	AND_expr OR OR_exp {
+		cout << "OR_expr -> AND_expr OR OR_expr\n";
+		}
+	| AND_expr {
+		cout << "OR_expr -> AND_expr\n";
+		}
+;
+
+AND_expr:
+	REL_expr AND AND_expr {
+		cout << "AND_expr -> NOT_expr AND AND_expr\n";
+		}
+	| REL_expr {
+		cout << "AND_expr -> NOT_expr\n";
+		}
+;
+
+NOT_expr:
+	NOT REL_expr {
+		cout << "NOT_expr -> NOT REL_expr\n";
+		}
+	| REL_expr {
+		cout << "NOT_expr -> REL_expr\n";
+		}
+;
+
+REL_expr:
+	AS_expr comp AS_expr {
+		cout << "REL_expr -> AS_expr comp AS_expr\n";
+		$$ = $1 $2 $3;
+		}
+	| L_PAREN OR_expr R_PAREN {
+		cout << "REL_expr -> L_PAREN OR_expr R_PAREN\n";
+		}
+	| TRUE {
+		cout << "REL_expr -> TRUE\n";
+		$$ = 1;
+		}
+	| FALSE {
+		cout << "REL_expr -> FALSE\n";
+		$$ = 0;
+		}
+;
+
+AS_expr:
+	MDM_expr { 
+		cout << "AS_expr -> MDM_expr\n"; 
+		}
+	| MDM_expr ADD AS_expr { 
+		cout << "AS_expr -> MDM_expr ADD AS_expr\n";
+		$$ = $1 + $3; 
+		}
+	| MDM_expr SUB AS_expr { 
+		cout << "AS_expr -> MDM_expr SUB AS_expr\n"; 
+		$$ = $1 - $3;
+		}
+;
+
+MDM_expr:
+	NEG_term { 
+		cout << "MDM_expr -> NEG_term\n"; 
+		}
+	| NEG_term MOD MDM_term { 
+		cout << "MDM_expr -> NEG_term MOD MDM_term\n"; 
+		$$ = $1 % $3;
+		}
+	| NEG_term MULT MDM_term { 
+		cout << "MDM_expr -> NEG_term MULT MDM_term\n"; 
+		$$ = $1 * $3;
+		}
+	| NEG_term DIV MDM_term	{ 
+		cout << "MDM_expr -> NEG_term DIV MDM_term\n"; 
+		$$ = $1 / $3;
+		}
+;
+
+NEG_term:
+	SUB term { 
+		cout << "NEG_term -> SUB term\n";
+		}
+	| term {
+		cout << "NEG_term -> term\n";
+		}
+	| identify L_PAREN EXP_term R_PAREN {
+		cout << "NEG_term -> identify L_PAREN EXP_term R_PAREN\n";
+		}
+;
+
+EXP_term:
+	AS_term COMMA EXP_term {
+		cout << "EXP_term -> AS_term COMMA EXP_term\n";
+		}
+	| AS_term {
+		cout << "EXP_term -> AS_term\n";
+		}
+;
+
+term:
+	var { 
+		cout << "term -> var\n"; 
+		}
+	| var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
+		cout << "term -> var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
+		$$ = $1[$3];
+		}
+	| L_PAREN AS_expr R_PAREN {
+		cout << "term -> L_PAREN AS_expr R_PAREN\n";
+		}
+	| NUMBER {
+		cout << "var -> " << $1 << endl;
+		}
+;
+
+var:
+	ident {
+		cout << "var -> ident\n";
+		}
+;
+
+identify:
+	ident {
+		cout << "identify -> ident\n";
+		}
+	ident COMMA identify{
+		cout << "identify -> ident COMMA identify\n";
+		}
+;
+
+ident:
+	IDENT { 
+		cout << "ident -> " << $1 << endl;
+    	}
+;
+
+comp:
+	GT {
+		cout << "comp -> GT\n";
+		}
+	| LT {
+		cout << "comp -> LT\n";
+		}
+	| GTE {
+		cout << "comp -> GTE\n";
+		}
+	| LTE {
+		cout << "comp -> LTE\n";
+		}
+	| EQ {
+		cout << "comp -> EQ\n";
+		}
+	| NEQ {
+		cout << "comp -> NEQ\n";
+		}
+;
 
 
 %%
 
 /*
-   function -> FUNCTION ident parameters locals parameters locals parameters
-
-   locals -> 
-   declarations -> idents COLON INTEGER
-   idents -> ident between ident | ident exp ident
-   ident -> number
-   between -> comma | assign | and | or
-   exp -> add | sub | mult | div | lte | gte | lt | gt | eq | neq | mod
-
-   parameters -> begin_params | end_params | begin_locals | end_locals | begin_body | end_body |
-                 parameters parameters
-   
-
-   
-
-   
+	start -> functions
+	functions -> function functions | epsilon
+    function -> FUNCTION ident SEMICOLON parameters declarations parameters declarations parameters statements parameters
+    parameters -> begin_params | end_params | begin_locals | end_locals | begin_body | end_body | parameters parameters
+   	declarations -> declaration SEMICOLON declarations
+   	declaration -> identify COLON INTEGER | identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
+   	statements -> statement SEMICOLON statements | epsilon
+   	statement -> var ASSIGN expression | IF OR_expr THEN statements ENDIF | WHILE OR_expr statements ENDLOOP | DO BEGINLOOP statements ENDLOOP WHILE OR_expr | FOR var ASSIGN | READ vars | WRITE vars | CONTINUE | RETURN AS_expr 
+   	OR_expr -> AND_expr OR OR_exp | AND_expr
+   	AND_expr -> REL_expr AND AND_expr | REL_expr
+   	REL_expr -> AS_expr comp AS_expr | L_PAREN OR_expr R_PAREN | TRUE | FALSE
+   	comp -> GT | LT | GTE | LTE | EQ | NEQ
+   	AS_expr -> MDM_expr | MDM_expr ADD AS_expr  MDM_expr SUB AS_expr 
+   	MDM_expr -> NEG_term | NEG_term MOD MDM_term | NEG_term MULT MDM_term | NEG_term DIV MDM_term
+   	NEG_term -> SUB term | term identify L_PAREN EXP_term R_PAREN
+   	term -> var | var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET | L_PAREN AS_expr R_PAREN | NUMBER
+   	var -> ident
+   	ident -> IDENT
 */
 
 

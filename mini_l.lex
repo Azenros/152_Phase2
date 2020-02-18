@@ -1,4 +1,5 @@
 %{
+  #include "mini_l.y"
   void separate();
   int line = 1;
   int space = 0;
