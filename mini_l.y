@@ -190,8 +190,6 @@ AS_expr2:
 		}
 ;
 
-
-
 MDM_expr:
 	NEG_term MDM_expr2{ 
 		cout << "MDM_expr -> NEG_term MDM_expr2\n"; 
@@ -298,8 +296,8 @@ comp:
 %%
 
 /*
-	start -> functions
-	functions -> function functions | epsilon
+	start -> program
+	program -> function functions | epsilon
     function -> FUNCTION ident SEMICOLON parameters declarations parameters declarations parameters statements parameters
     parameters -> begin_params | end_params | begin_locals | end_locals | begin_body | end_body | parameters parameters
    	declarations -> declaration SEMICOLON declarations
