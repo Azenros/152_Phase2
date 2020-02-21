@@ -3,7 +3,6 @@
   #include <stdio.h>
   #include <string>
   #include <stdlib.h>
-
   using namespace std;
 
   int line = 1;
@@ -12,15 +11,15 @@
 %}
 
 %union {
-	int intval;
-	string strval;
+	int ival;
+	string sval;
 }
 
 %start start
 
 %token FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY FOR OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN RETURN
-%token <intval> NUMBER
-%token <strval> IDENT
+%token <ival> NUMBER
+%token <sval> IDENT
 %left MULT DIV MOD ADD SUB
 %left EQ NEQ LT GT LTE GTE
 %right NOT
@@ -28,17 +27,14 @@
 %right ASSIGN
 
 %%
+
 start:
-	functions { cout << "start -> functions\n"; }
+	program { cout << "start -> program\n"; }
 ;
 
-functions:
-	function functions { 
-		cout << "functions -> function functions\n"; 
-		}
-	| %empty { 
-		cout << "functions -> epsilon\n"; 
-		}
+program:
+	function program { cout << "program -> function\n"; }
+	| %empty { cout << "program -> epsilon\n"; }
 ;
 
 function:
@@ -66,11 +62,21 @@ declarations:
 	declaration SEMICOLON declarations {
 		cout << "declarations -> declaration SEMICOLON declarations\n"; 
 		}
+	| %empty { cout << "declarations -> epsilon\n"; }
 ;
 
 declaration:
 	identify COLON declaration_2 {
 		cout << "declaration -> identify COLON declaration_2\n"; 
+		}
+;
+
+identify:
+	IDENT {
+		cout << "identify -> " << $1 << endl;
+		}
+	IDENT COMMA identify {
+		cout << "identify -> "  << $1 << " COMMA identify\n";
 		}
 ;
 
@@ -84,10 +90,10 @@ declaration_2:
 ;
 
 statements:
-	%empty
-	| statement SEMICOLON statements {
+	statement SEMICOLON statements {
 		cout << "statements -> statement SEMICOLON statements\n";
 		}
+	| %empty { cout << "statements -> epsilon\n"; }
 ;
 
 statement:
@@ -155,7 +161,7 @@ REL_expr:
 	AS_expr comp AS_expr {
 		cout << "REL_expr -> AS_expr comp AS_expr\n";
 		}
-	| L_PAREN OR_expr "R_PAREN" {
+	| L_PAREN OR_expr R_PAREN {
 		cout << "REL_expr -> L_PAREN OR_expr R_PAREN\n";
 		}
 	| TRUE {
@@ -270,14 +276,7 @@ var:
 		}
 ;
 
-identify:
-	IDENT {
-		cout << "identify -> " << $1 << endl;
-		}
-	IDENT COMMA identify {
-		cout << "identify -> "  << $1 << " COMMA identify\n";
-		}
-;
+
 
 comp:
 	GT {
