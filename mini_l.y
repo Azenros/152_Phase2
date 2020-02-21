@@ -4,23 +4,27 @@
   #include <string>
   #include <stdlib.h>
 
-  using namespace std;  
+  using namespace std;
 
   int line = 1;
   int space = 0;
   //scroll down for full grammar
 %}
 
+%union {
+	int intval;
+	string strval;
+}
+
 %start start
 
-%token FUNCTION BEGINPARAMS ENDPARAMS BEGINLOCALS ENDLOCALS BEGINBODY ENDBODY INTEGER ARRAY OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN RETURN
+%token FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY FOR OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN RETURN
 %token <intval> NUMBER
 %token <strval> IDENT
 %left MULT DIV MOD ADD SUB
-%left AND OR NOT EQ NEQ LT GT LTE GTE
-%left LT LTE GT GTE EQ NEQ
+%left EQ NEQ LT GT LTE GTE
 %right NOT
-%left AND OR
+%left AND OR 
 %right ASSIGN
 
 %%
@@ -65,14 +69,19 @@ declarations:
 ;
 
 declaration:
-	identify COLON INTEGER {
-		cout << "declaration -> identify COLON INTEGER\n"; 
-		}
-	| identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
-		cout << "declaration -> identify COLON ARRAY L_SQUARE_BRACKET " << $5 << " R_SQUARE_BRACKET OF INTEGER\n"; 
+	identify COLON declaration_2 {
+		cout << "declaration -> identify COLON declaration_2\n"; 
 		}
 ;
 
+declaration_2:
+	INTEGER {
+		cout << "declaration_2 -> INTEGER\n"; 
+		}
+	| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+		cout << "declaration_2 -> ARRAY L_SQUARE_BRACKET " << $3 << " R_SQUARE_BRACKET OF INTEGER\n"; 
+		}
+;
 
 statements:
 	%empty
@@ -88,14 +97,17 @@ statement:
 	| IF OR_expr THEN statements ENDIF {
 		cout << "statement -> IF OR_expr THEN statements ENDIF\n";
 		}
-	| WHILE OR_expr statements ENDLOOP {
-		cout << "statement -> WHILE OR_expr statements ENDLOOP\n";
+	| IF OR_expr THEN statements ELSE statements ENDIF {
+		cout << "statement -> IF OR_expr THEN statements ELSE statements ENDIF\n";
+		}
+	| WHILE OR_expr BEGINLOOP statements ENDLOOP {
+		cout << "statement -> WHILE OR_expr BEGINLOOP statements ENDLOOP\n";
 		}
 	| DO BEGINLOOP statements ENDLOOP WHILE OR_expr {
 		cout << "statement -> DO BEGINLOOP statements ENDLOOP WHILE OR_expr\n";
 		}
-	| FOR var ASSIGN  {
-		cout << "statement -> FOR var ASSIGN\n";
+	| FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var ASSIGN AS_expr BEGINLOOP statements ENDLOOP {
+		cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
 		}
 	| READ vars {
 		cout << "statement -> READ vars\n";
@@ -142,50 +154,56 @@ NOT_expr:
 REL_expr:
 	AS_expr comp AS_expr {
 		cout << "REL_expr -> AS_expr comp AS_expr\n";
-		$$ = $1 $2 $3;
 		}
 	| L_PAREN OR_expr "R_PAREN" {
 		cout << "REL_expr -> L_PAREN OR_expr R_PAREN\n";
 		}
 	| TRUE {
 		cout << "REL_expr -> TRUE\n";
-		$$ = 1;
 		}
 	| FALSE {
 		cout << "REL_expr -> FALSE\n";
-		$$ = 0;
 		}
 ;
 
 AS_expr:
-	MDM_expr { 
-		cout << "AS_expr -> MDM_expr\n"; 
-		}
-	| MDM_expr ADD AS_expr { 
-		cout << "AS_expr -> MDM_expr ADD AS_expr\n";
-		$$ = $1 + $3; 
-		}
-	| MDM_expr SUB AS_expr { 
-		cout << "AS_expr -> MDM_expr SUB AS_expr\n"; 
-		$$ = $1 - $3;
+	MDM_expr AS_expr2 { 
+		cout << "AS_expr -> MDM_expr AS_expr2\n"; 
 		}
 ;
 
+AS_expr2:
+	%empty { 
+		cout << "AS_expr2 -> epsilon\n"; 
+		}
+	| ADD AS_expr { 
+		cout << "AS_expr2 -> ADD AS_expr\n";
+		}
+	| SUB AS_expr { 
+		cout << "AS_expr2 -> SUB AS_expr\n";
+		}
+;
+
+
+
 MDM_expr:
-	NEG_term { 
-		cout << "MDM_expr -> NEG_term\n"; 
+	NEG_term MDM_expr2{ 
+		cout << "MDM_expr -> NEG_term MDM_expr2\n"; 
 		}
-	| NEG_term MOD MDM_expr { 
-		cout << "MDM_expr -> NEG_term MOD MDM_expr\n"; 
-		$$ = $1 % $3;
+;
+
+MDM_expr2:
+	%empty { 
+		cout << "MDM_expr2 -> epsilon\n"; 
 		}
-	| NEG_term MULT MDM_expr { 
-		cout << "MDM_expr -> NEG_term MULT MDM_expr\n"; 
-		$$ = $1 * $3;
+	| MOD MDM_expr { 
+		cout << "MDM_expr2 -> MOD MDM_expr\n";
 		}
-	| NEG_term DIV MDM_expr	{ 
-		cout << "MDM_expr -> NEG_term DIV MDM_expr\n"; 
-		$$ = $1 / $3;
+	| MULT MDM_expr { 
+		cout << "MDM_expr2 -> MULT MDM_expr\n";
+		}
+	| DIV MDM_expr	{ 
+		cout << "MDM_expr2 -> DIV MDM_expr\n";
 		}
 ;
 
@@ -202,11 +220,20 @@ NEG_term:
 ;
 
 EXP_term:
-	AS_expr COMMA EXP_term {
+	AS_expr EXP_after {
 		cout << "EXP_term -> AS_expr COMMA EXP_term\n";
 		}
 	| AS_expr {
 		cout << "EXP_term -> AS_expr\n";
+		}
+;
+
+EXP_after:
+	%empty {
+		cout << "EXP_after -> epsilon\n";
+		}
+	| COMMA EXP_term {
+		cout << "EXP_after -> COMMA EXP_term\n";
 		}
 ;
 
@@ -216,7 +243,6 @@ term:
 		}
 	| var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
 		cout << "term -> var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
-		$$ = $1[$3];
 		}
 	| L_PAREN AS_expr R_PAREN {
 		cout << "term -> L_PAREN AS_expr R_PAREN\n";
@@ -248,7 +274,7 @@ identify:
 	IDENT {
 		cout << "identify -> " << $1 << endl;
 		}
-	IDENT COMMA identify{
+	IDENT COMMA identify {
 		cout << "identify -> "  << $1 << " COMMA identify\n";
 		}
 ;
