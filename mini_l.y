@@ -75,7 +75,7 @@ identify:
 	IDENT {
 		cout << "identify -> " << $1 << endl;
 		}
-	IDENT COMMA identify {
+	| IDENT COMMA identify {
 		cout << "identify -> "  << $1 << " COMMA identify\n";
 		}
 ;
@@ -235,10 +235,7 @@ EXP_term:
 ;
 
 EXP_after:
-	%empty {
-		cout << "EXP_after -> epsilon\n";
-		}
-	| COMMA EXP_term {
+	COMMA EXP_term {
 		cout << "EXP_after -> COMMA EXP_term\n";
 		}
 ;
@@ -275,8 +272,6 @@ var:
 		cout << "var -> " << $1 << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
 		}
 ;
-
-
 
 comp:
 	GT {
