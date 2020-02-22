@@ -83,7 +83,7 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 {USCORE}({LETTER}*{DIGIT}*)* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1);}
 ({LETTER}?{DIGIT}?)*{USCORE}+ {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1);}
 {ERROR} {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", line, space, yytext); exit(1); }
-({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {yyless(yyleng); space += yyleng;  return IDENT;}
+({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {yyless(yyleng); space += yyleng; return IDENT;}
 
 
 %%

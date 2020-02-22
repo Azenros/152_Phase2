@@ -230,7 +230,7 @@ MDM_expr2:
 	| DIV MDM_expr	{ 
 		cout << "MDM_expr2 -> DIV MDM_expr\n";
 		}
-;
+; 
 
 NEG_term:
 	SUB term { 
