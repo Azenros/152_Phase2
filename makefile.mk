@@ -21,6 +21,7 @@ bison.o:	bison.c
 bison.c:	mini_l.y
 		bison -d -v --file-prefix=y mini_l.y
 		cp y.tab.c bison.c
+		cp y.tab.h tok.h
 
 clean:
 	rm -f *.o *~ lex.c lex.yy.c bison.c y.tab.c y.tab.h y.output mini_l
