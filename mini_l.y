@@ -4,15 +4,14 @@
   #include <string>
   #include <stdlib.h>
   using namespace std;
-
-  int line = 1;
-  int space = 0;
+  int yylex();
+  int yyerror(string s);
   //scroll down for full grammar
 %}
 
 %union {
 	int ival;
-	string sval;
+	string* sval;
 }
 
 %start start
@@ -25,6 +24,7 @@
 %right NOT
 %left AND OR 
 %right ASSIGN
+
 
 %%
 
@@ -39,7 +39,7 @@ program:
 
 function:
 	FUNCTION IDENT SEMICOLON parameters declarations parameters declarations parameters statements parameters {
-		cout << "function -> FUNCTION" << $2 << "SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
+		cout << "function -> FUNCTION" << IDENT << "SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
 		}
 ;
 
@@ -73,10 +73,10 @@ declaration:
 
 identify:
 	IDENT {
-		cout << "identify -> " << $1 << endl;
+		cout << "identify -> " << IDENT << endl;
 		}
 	| IDENT COMMA identify {
-		cout << "identify -> "  << $1 << " COMMA identify\n";
+		cout << "identify -> "  << IDENT << " COMMA identify\n";
 		}
 ;
 
@@ -85,7 +85,7 @@ declaration_2:
 		cout << "declaration_2 -> INTEGER\n"; 
 		}
 	| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
-		cout << "declaration_2 -> ARRAY L_SQUARE_BRACKET " << $3 << " R_SQUARE_BRACKET OF INTEGER\n"; 
+		cout << "declaration_2 -> ARRAY L_SQUARE_BRACKET " << NUMBER << " R_SQUARE_BRACKET OF INTEGER\n"; 
 		}
 ;
 
@@ -249,7 +249,7 @@ term:
 		cout << "term -> L_PAREN AS_expr R_PAREN\n";
 		}
 	| NUMBER {
-		cout << "var -> " << $1 << endl;
+		cout << "var -> " << NUMBER << endl;
 		}
 ;
 
@@ -264,10 +264,10 @@ vars:
 
 var:
 	IDENT {
-		cout << "var -> " << $1 << endl;
+		cout << "var -> " << IDENT << endl;
 		}
 	IDENT L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
-		cout << "var -> " << $1 << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
+		cout << "var -> " << IDENT << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
 		}
 ;
 
@@ -315,8 +315,10 @@ comp:
    	var -> ident
    	ident -> IDENT
 */
+int yyerror(string s) {
+    extern int line, space;
+    cout << "Error at line " << line << ", column " << space << ": " << s << endl;
+    exit(1);
+    return 0;
+} 
 
-
-int main() {
-    yyparse();
-}
