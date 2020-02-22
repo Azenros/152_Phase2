@@ -89,6 +89,5 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 %%
 
 int main() {
-    yylex();
     yyparse();
 }
