@@ -39,7 +39,7 @@ program:
 
 function:
 	FUNCTION IDENT SEMICOLON parameters declarations parameters declarations parameters statements parameters {
-		cout << "function -> FUNCTION" << IDENT << "SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
+		cout << "function -> FUNCTION IDENT SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
 		}
 ;
 
@@ -73,10 +73,10 @@ declaration:
 
 identify:
 	IDENT {
-		cout << "identify -> " << IDENT << endl;
+		cout << "identify -> IDENT " << $1 << endl;
 		}
 	| IDENT COMMA identify {
-		cout << "identify -> "  << IDENT << " COMMA identify\n";
+		cout << "identify -> IDENT " << $1 << " COMMA identify\n";
 		}
 ;
 
@@ -85,7 +85,7 @@ declaration_2:
 		cout << "declaration_2 -> INTEGER\n"; 
 		}
 	| ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
-		cout << "declaration_2 -> ARRAY L_SQUARE_BRACKET " << NUMBER << " R_SQUARE_BRACKET OF INTEGER\n"; 
+		cout << "declaration_2 -> ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"; 
 		}
 ;
 
@@ -131,8 +131,8 @@ statement:
 ;
 
 OR_expr:
-	AND_expr OR OR_expr {
-		cout << "OR_expr -> AND_expr OR OR_expr\n";
+	OR_expr OR AND_expr {
+		cout << "OR_expr -> OR_expr OR AND_expr\n";
 		}
 	| AND_expr {
 		cout << "OR_expr -> AND_expr\n";
@@ -140,8 +140,8 @@ OR_expr:
 ;
 
 AND_expr:
-	NOT_expr AND AND_expr {
-		cout << "AND_expr -> NOT_expr AND AND_expr\n";
+	AND_expr AND NOT_expr {
+		cout << "AND_expr -> ANd_expr AND NOT_expr\n";
 		}
 	| NOT_expr {
 		cout << "AND_expr -> NOT_expr\n";
@@ -218,23 +218,8 @@ NEG_term:
 	| term {
 		cout << "NEG_term -> term\n";
 		}
-	| identify L_PAREN EXP_term R_PAREN {
-		cout << "NEG_term -> identify L_PAREN EXP_term R_PAREN\n";
-		}
-;
-
-EXP_term:
-	AS_expr EXP_after {
-		cout << "EXP_term -> AS_expr COMMA EXP_term\n";
-		}
-	| AS_expr {
-		cout << "EXP_term -> AS_expr\n";
-		}
-;
-
-EXP_after:
-	COMMA EXP_term {
-		cout << "EXP_after -> COMMA EXP_term\n";
+	| IDENT EXP_term {
+		cout << "NEG_term -> IDENT EXP_term \n";
 		}
 ;
 
@@ -242,14 +227,29 @@ term:
 	var { 
 		cout << "term -> var\n"; 
 		}
-	| var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
-		cout << "term -> var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
-		}
 	| L_PAREN AS_expr R_PAREN {
 		cout << "term -> L_PAREN AS_expr R_PAREN\n";
 		}
 	| NUMBER {
-		cout << "var -> " << NUMBER << endl;
+		cout << "var -> NUMBER " << ($1) << endl;
+		}
+;
+
+EXP_term:
+	L_PAREN EXP_list R_PAREN {
+		cout << "EXP_term -> L_PAREN EXP_list R_PAREN\n";
+		}
+	| L_PAREN R_PAREN {
+		cout << "EXP_term -> L_PAREN  R_PAREN\n";
+		}
+;
+
+EXP_list:
+	COMMA AS_expr {
+		cout << "EXP_list -> COMMA AS_expr\n";
+		}
+	AS_expr {
+		cout << "EXP_list -> AS_expr\n";
 		}
 ;
 
@@ -264,10 +264,10 @@ vars:
 
 var:
 	IDENT {
-		cout << "var -> " << IDENT << endl;
+		cout << "var -> IDENT " << ($1) << endl;
 		}
-	IDENT L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
-		cout << "var -> " << IDENT << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
+	| IDENT L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
+		cout << "var -> IDENT " << ($1) << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
 		}
 ;
 
@@ -317,7 +317,8 @@ comp:
 */
 int yyerror(string s) {
     extern int line, space;
-    cout << "Error at line " << line << ", column " << space << ": " << s << endl;
+    extern char* yytext;
+    cout << "Error at line " << line << ", column " << space << ": " << s << ": " << yytext << endl;
     exit(1);
     return 0;
 } 
