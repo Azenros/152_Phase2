@@ -140,10 +140,10 @@ OR_expr:
 ;
 
 AND_expr:
-	REL_expr AND AND_expr {
+	NOT_expr AND AND_expr {
 		cout << "AND_expr -> NOT_expr AND AND_expr\n";
 		}
-	| REL_expr {
+	| NOT_expr {
 		cout << "AND_expr -> NOT_expr\n";
 		}
 ;
