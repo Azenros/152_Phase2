@@ -3,7 +3,7 @@
 OBJS	= bison.o lex.o 
 
 CC	= g++
-CFLAGS	= -g -Wall -ansi -pedantic
+CFLAGS	= -g -Wall -ansi -pedantic -o parser
 
 mini_l:		$(OBJS)
 		$(CC) $(CFLAGS) $(OBJS) -o mini_l -lfl
