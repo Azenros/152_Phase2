@@ -93,7 +93,7 @@ statements:
 	statement SEMICOLON statements {
 		cout << "statements -> statement SEMICOLON statements\n";
 		}
-	| %empty { cout << "statements -> epsilon\n"; }
+	| statement SEMICOLON { cout << "statements -> statement SEMICOLON\n"; }
 ;
 
 statement:
@@ -115,11 +115,11 @@ statement:
 	| FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var ASSIGN AS_expr BEGINLOOP statements ENDLOOP {
 		cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
 		}
-	| READ vars {
-		cout << "statement -> READ vars\n";
+	| READ var vars {
+		cout << "statement -> READ var vars\n";
 		}
-	| WRITE vars {
-		cout << "statement -> WRITE vars\n";
+	| WRITE var vars {
+		cout << "statement -> WRITE var vars\n";
 		}
 	| CONTINUE {
 		cout << "statement -> CONTINUE\n";
@@ -141,7 +141,7 @@ OR_expr:
 
 AND_expr:
 	AND_expr AND NOT_expr {
-		cout << "AND_expr -> ANd_expr AND NOT_expr\n";
+		cout << "AND_expr -> AND_expr AND NOT_expr\n";
 		}
 	| NOT_expr {
 		cout << "AND_expr -> NOT_expr\n";
@@ -169,6 +169,27 @@ REL_expr:
 		}
 	| FALSE {
 		cout << "REL_expr -> FALSE\n";
+		}
+;
+
+comp:
+	GT {
+		cout << "comp -> GT\n";
+		}
+	| LT {
+		cout << "comp -> LT\n";
+		}
+	| GTE {
+		cout << "comp -> GTE\n";
+		}
+	| LTE {
+		cout << "comp -> LTE\n";
+		}
+	| EQ {
+		cout << "comp -> EQ\n";
+		}
+	| NEQ {
+		cout << "comp -> NEQ\n";
 		}
 ;
 
@@ -213,13 +234,13 @@ MDM_expr2:
 
 NEG_term:
 	SUB term { 
-		cout << "NEG_term -> SUB term\n";
+		cout << "NEG_term -> SUB NEG_term\n";
 		}
 	| term {
-		cout << "NEG_term -> term\n";
+		cout << "NEG_term -> NEG_term\n";
 		}
-	| IDENT EXP_term {
-		cout << "NEG_term -> IDENT EXP_term \n";
+	| IDENT term_id {
+		cout << "NEG_term -> IDENT term_id \n";
 		}
 ;
 
@@ -231,34 +252,43 @@ term:
 		cout << "term -> L_PAREN AS_expr R_PAREN\n";
 		}
 	| NUMBER {
-		cout << "var -> NUMBER " << ($1) << endl;
+		cout << "term -> NUMBER " << ($1) << endl;
 		}
 ;
 
-EXP_term:
-	L_PAREN EXP_list R_PAREN {
-		cout << "EXP_term -> L_PAREN EXP_list R_PAREN\n";
+term_id:
+	L_PAREN term_ex R_PAREN {
+		cout << "term_id -> L_PAREN term_ex R_PAREN\n";
 		}
 	| L_PAREN R_PAREN {
-		cout << "EXP_term -> L_PAREN  R_PAREN\n";
+		cout << "term_id-> L_PAREN  R_PAREN\n";
 		}
 ;
 
-EXP_list:
-	COMMA AS_expr {
-		cout << "EXP_list -> COMMA AS_expr\n";
+term_ex:
+	AS_expr COMMA term_ex {
+		cout << "term_ex -> AS_expr COMMA term_ex\n";
 		}
-	AS_expr {
-		cout << "EXP_list -> AS_expr\n";
+	| AS_expr {
+		cout << "term_ex -> AS_expr\n";
+		}
+;
+
+term_exp:
+	COMMA term_ex {
+		cout << "term_exp -> COMMA term_ex\n";
+		}
+	| %empty {
+		cout << "term_exp -> epsilon\n";
 		}
 ;
 
 vars:
-	var COMMA vars {
+	COMMA vars {
 		cout << "vars -> var COMMA vars\n";
 		}
-	| var {
-		cout << "vars -> var\n";
+	| %empty {
+		cout << "vars -> epsilon\n";
 		}
 ;
 
@@ -271,50 +301,11 @@ var:
 		}
 ;
 
-comp:
-	GT {
-		cout << "comp -> GT\n";
-		}
-	| LT {
-		cout << "comp -> LT\n";
-		}
-	| GTE {
-		cout << "comp -> GTE\n";
-		}
-	| LTE {
-		cout << "comp -> LTE\n";
-		}
-	| EQ {
-		cout << "comp -> EQ\n";
-		}
-	| NEQ {
-		cout << "comp -> NEQ\n";
-		}
-;
+
 
 
 %%
 
-/*
-	start -> program
-	program -> function functions | epsilon
-    function -> FUNCTION ident SEMICOLON parameters declarations parameters declarations parameters statements parameters
-    parameters -> begin_params | end_params | begin_locals | end_locals | begin_body | end_body | parameters parameters
-   	declarations -> declaration SEMICOLON declarations
-   	declaration -> identify COLON INTEGER | identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
-   	statements -> statement SEMICOLON statements | epsilon
-   	statement -> var ASSIGN AS_expr | IF OR_expr THEN statements ENDIF | WHILE OR_expr statements ENDLOOP | DO BEGINLOOP statements ENDLOOP WHILE OR_expr | FOR var ASSIGN | READ vars | WRITE vars | CONTINUE | RETURN AS_expr 
-   	OR_expr -> AND_expr OR OR_exp | AND_expr
-   	AND_expr -> REL_expr AND AND_expr | REL_expr
-   	REL_expr -> AS_expr comp AS_expr | L_PAREN OR_expr R_PAREN | TRUE | FALSE
-   	comp -> GT | LT | GTE | LTE | EQ | NEQ
-   	AS_expr -> MDM_expr | MDM_expr ADD AS_expr  MDM_expr SUB AS_expr 
-   	MDM_expr -> NEG_term | NEG_term MOD MDM_expr | NEG_term MULT MDM_expr | NEG_term DIV MDM_expr
-   	NEG_term -> SUB term | term identify L_PAREN EXP_term R_PAREN
-   	term -> var | var L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET | L_PAREN AS_expr R_PAREN | NUMBER
-   	var -> ident
-   	ident -> IDENT
-*/
 int yyerror(string s) {
     extern int line, space;
     extern char* yytext;
