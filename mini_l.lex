@@ -7,6 +7,8 @@
   int line = 1;
   int space = 0;
   int tabspaces = 8;
+
+  int yyparse();
 %}
 
 DIGIT [0-9]
@@ -19,7 +21,6 @@ DIV [/]
 MOD [%]
 SPACE [ ]
 ERROR [^0-9A-Za-z)(+*/%\n\t-]
-
 
 %option nounput
 
@@ -89,4 +90,5 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 
 int main() {
     yylex();
+    yyparse();
 }
