@@ -6,12 +6,13 @@
   using namespace std;
   int yylex();
   int yyerror(string s);
+  int yyerror(char* c);
   //scroll down for full grammar
 %}
 
 %union {
 	int ival;
-	string* sval;
+	char* sval;
 }
 
 %start start
@@ -313,4 +314,6 @@ int yyerror(string s) {
     exit(1);
     return 0;
 } 
-
+int yyerror(char* c) {
+    return yyerror(string(c));
+}
