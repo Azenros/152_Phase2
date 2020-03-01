@@ -7,12 +7,14 @@
   int line = 1;
   int space = 0;
   int tabspaces = 8;
-
+  
+  string prog;
   int yyparse();
 %}
 
 DIGIT [0-9]
 LETTER [a-zA-Z]
+ALPHANUM [0-9a-zA-Z]
 USCORE [_]
 SUB [-]
 ADD [+]
@@ -79,15 +81,16 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 {MOD} {space++; return MOD;} 
 {SPACE}+ {yyless(1); space++;}
 {DIGIT}+ {space += yyleng; yylval.ival = atoi(yytext); return NUMBER;}
-{DIGIT}+{USCORE}?{LETTER}+ {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1);}
-{USCORE}({LETTER}*{DIGIT}*)* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1);}
-({LETTER}?{DIGIT}?)*{USCORE}+ {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1);}
+{DIGIT}+{USCORE}?({LETTER}|{DIGIT})+ {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1);}
+{USCORE}({ALPHANUM})* {printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", line, space, yytext); exit(1);}
+(ALPHANUM)*{USCORE}+ {printf("Error at line %d, column %d: identifier \"%s\" cannot end with an underscore\n", line, space, yytext); exit(1);}
 {ERROR} {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", line, space, yytext); exit(1); }
-({LETTER}?{DIGIT}?)+{USCORE}?({LETTER}?{DIGIT}?)* {yyless(yyleng); space += yyleng; yylval.sval = yytext; return IDENT;}
+({ALPHANUM})+{USCORE}?{ALPHANUM}* {yyless(yyleng); space += yyleng; yylval.sval = strdup(yytext); return IDENT;}
 
 
 %%
 
 int main() {
+    prog = strdup(argv[1]);
     yyparse();
 }
