@@ -2,6 +2,7 @@
   #include <iostream>
   #include <stdio.h>
   #include <string>
+  #include <string.h>
   #include <map>
   #include <stdlib.h>
   using namespace std;
@@ -14,6 +15,7 @@
   extern int space;
   extern char* yytext;
   extern string prog;
+  char epsilon[1] = "";
   
   map<string, int> variables;
   map<string, int> functions;
@@ -37,9 +39,8 @@
 %error-verbose
 %start start
 
-%type <expr> declarations declaration declaration_2 identify vars var
 %type <stat> statements statement
-%type <expr> OR_expr AND_expr REL_expr NOT_expr AS_expr MDM_expr NEG_term term term_id term_ex term_exp
+%type <expr> OR_expr AND_expr REL_expr NOT_expr AS_expr MDM_expr NEG_term term term_id term_ex term_exp comp declarations declaration declaration_2 identify vars var fident
 
 %token FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY FOR OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN RETURN
 %token <ival> NUMBER
@@ -69,17 +70,35 @@ program:
         //cout << "program -> epsilon\n";
         string tMain = "main";
         if (functions.find(tMain) == functions.end()) {
-            yyerror("Function main not declared");
+            string s = "Function main not declared";
+            yyerror(s);
         }
         if (variables.find(prog) != functions.end()) {
-            yyerror("Program name declared as variable");
+            string s = "Program name declared as variable";
+            yyerror(s);
         }
     }
 ;
 
 function:
-    FUNCTION IDENT SEMICOLON parameters declarations parameters declarations parameters statements parameters {
-        cout << "function -> FUNCTION IDENT SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
+    FUNCTION fident SEMICOLON parameters declarations parameters declarations parameters statements parameters {
+        cout << "function -> FUNCTION fident SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
+    }
+;
+
+fident:
+    IDENT {
+        cout << "fident -> IDENT " << $1 << endl;
+        char emess[128] = "abc";
+        if (functions.find($1) != functions.end()) {
+            snprintf(emess,128,"Redeclaration of function %s", $1);
+            yyerror(emess);
+        }
+        else {
+            functions.insert(pair<string,int>($1,0));
+        }
+        $$.code = strdup("");
+        $$.place = strdup($1);
     }
 ;
 
@@ -157,17 +176,45 @@ statement:
     | FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var ASSIGN AS_expr BEGINLOOP statements ENDLOOP {
         cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
     }
-    | READ var vars {
-        cout << "statement -> READ var vars\n";
+    | READ vars {
+        cout << "statement -> READ vars\n";
+        size_t in = 0;
+        string re = $2.code;
+        while (true) {
+            in = re.find("|",in);
+            if (in == string::npos) {
+                break;
+            }
+            re.replace(in,1, "<");
+        }
+        $$.code = strdup(re.c_str());
     }
-    | WRITE var vars {
-        cout << "statement -> WRITE var vars\n";
+    | WRITE vars {
+        cout << "statement -> WRITE vars\n";
+        size_t in = 0;
+        string wr = $2.code;
+        while (true) {
+            in = wr.find("|",in);
+            if (in == string::npos) {
+                break;
+            }
+            wr.replace(in,1, ">");
+        }
+        $$.code = strdup(wr.c_str());
+            
     }
     | CONTINUE {
         cout << "statement -> CONTINUE\n";
+        string con = "continue\n";
+        $$.code = strdup(con.c_str());
     }
     | RETURN AS_expr {
         cout << "statement -> RETURN AS_expr\n";
+        string temp = $2.code;
+        temp.append("ret ");
+        temp.append($2.place);
+        temp.append("\n");
+        $$.code = strdup(temp.c_str());
     }
 		
 ;
@@ -178,6 +225,8 @@ OR_expr:
     }
     | AND_expr {
         cout << "OR_expr -> AND_expr\n";
+        $$.code = strdup($1.code);
+        $$.place = strdup($1.place);
     }
 ;
 
@@ -187,6 +236,8 @@ AND_expr:
     }
     | NOT_expr {
         cout << "AND_expr -> NOT_expr\n";
+        $$.code = strdup($1.code);
+        $$.place = strdup($1.place);
     }
 ;
 
@@ -196,6 +247,8 @@ NOT_expr:
     }
     | REL_expr {
         cout << "NOT_expr -> REL_expr\n";
+        $$.code = strdup($1.code);
+        $$.place = strdup($1.place);
     }
 ;
 
@@ -208,45 +261,51 @@ REL_expr:
     }
     | TRUE {
         cout << "REL_expr -> TRUE\n";
+        string t = "1";
+        $$.code = strdup("");
+        $$.place = strdup(t.c_str());
     }
     | FALSE {
         cout << "REL_expr -> FALSE\n";
+        string f = "0";
+        $$.code = strdup("");
+        $$.place = strdup(f.c_str());
     }
 ;
 
 comp:
     GT {
-        cout << "comp -> GT\n";
+        //cout << "comp -> GT\n";
         string cmp = ">";
         $$.code = strdup("");
         $$.place = strdup(cmp.c_str());
     }
     | LT {
-        cout << "comp -> LT\n";
+        //cout << "comp -> LT\n";
         string cmp = "<";
         $$.code = strdup("");
         $$.place = strdup(cmp.c_str());
     }
     | GTE {
-        cout << "comp -> GTE\n";
+        //cout << "comp -> GTE\n";
         string cmp = ">=";
         $$.code = strdup("");
         $$.place = strdup(cmp.c_str());
     }
     | LTE {
-        cout << "comp -> LTE\n";
+        //cout << "comp -> LTE\n";
         string cmp = "<=";
         $$.code = strdup("");
         $$.place = strdup(cmp.c_str());
     }
     | EQ {
-        cout << "comp -> EQ\n";
+        //cout << "comp -> EQ\n";
         string cmp = "==";
         $$.code = strdup("");
         $$.place = strdup(cmp.c_str());
     }
     | NEQ {
-        cout << "comp -> NEQ\n";
+        //cout << "comp -> NEQ\n";
         string cmp = "!=";
         $$.code = strdup("");
         $$.place = strdup(cmp.c_str());
@@ -255,7 +314,9 @@ comp:
 
 AS_expr:
     MDM_expr { 
-        cout << "AS_expr -> MDM_expr\n"; 
+        cout << "AS_expr -> MDM_expr\n";
+        $$.code = strdup($1.code);
+        $$.place = strdup($1.place); 
     }
     | MDM_expr ADD AS_expr { 
         cout << "AS_expr -> MDM_expr ADD AS_expr\n";
@@ -267,7 +328,9 @@ AS_expr:
 
 MDM_expr:
     NEG_term { 
-        cout << "MDM_expr -> NEG_term\n"; 
+        cout << "MDM_expr -> NEG_term\n";
+        $$.code = strdup($1.code);
+        $$.place = strdup($1.place); 
     }
     | NEG_term MOD MDM_expr { 
         cout << "MDM_expr -> NEG_term MOD MDM_expr\n";
@@ -286,6 +349,8 @@ NEG_term:
     }
     | term {
         cout << "NEG_term -> NEG_term\n";
+        $$.code = strdup($1.code);
+        $$.place = strdup($1.place);
     }
     | IDENT term_id {
         cout << "NEG_term -> IDENT term_id \n";
@@ -329,17 +394,27 @@ term_exp:
 ;
 
 vars:
-    COMMA vars {
+    var COMMA vars {
         cout << "vars -> var COMMA vars\n";
     }
-    | %empty {
-        cout << "vars -> epsilon\n";
+    | var {
+        cout << "vars -> var\n";
     }
 ;
 
 var:
     IDENT {
         cout << "var -> IDENT " << ($1) << endl;
+        char emess[128] = "abc";
+        if (variables.find($1) != variables.end()) {
+            snprintf(emess,128,"Redeclaration of variable %s", $1);
+            yyerror(emess);
+        }
+        else {
+            variables.insert(pair<string, int>((string)$1, 0));
+        }
+        $$.code = strdup("");
+        $$.place = strdup($1);
     }
     | IDENT L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
         cout << "var -> IDENT " << ($1) << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";

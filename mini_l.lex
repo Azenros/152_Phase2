@@ -2,13 +2,14 @@
   #include <iostream>
   #include <stdio.h>
   #include <string>
+  #include <string.h>
   #include <stdlib.h>
   #include "tok.h"
   int line = 1;
   int space = 0;
   int tabspaces = 8;
   
-  string prog;
+  char* prog;
   int yyparse();
 %}
 
@@ -90,7 +91,7 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 
 %%
 
-int main() {
+int main(int argc, char* argv[]) {
     prog = strdup(argv[1]);
     yyparse();
 }
