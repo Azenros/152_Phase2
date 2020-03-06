@@ -474,10 +474,34 @@ term_exp:
 
 vars:
     var COMMA vars {
-        cout << "vars -> var COMMA vars\n";
+        //cout << "vars -> var COMMA vars\n";
+        cout << "vars -> var\n";
+        string code = $1.code;
+        if ($1.array) {
+            code.append(".[]| ");
+        }
+        else {
+            code.append(".| ");
+        }
+        code.append($1.place);
+        code.append("\n");
+        code.append($3.code);
+        $$.code = strdup(code.c_str());
+        $$.place = strdup("");
     }
     | var {
-        cout << "vars -> var\n";
+        //cout << "vars -> var\n";
+        string code = $1.code;
+        if ($1.array) {
+            code.append(".[]| ");
+        }
+        else {
+            code.append(".| ");
+        }
+        code.append($1.place);
+        code.append("\n");
+        $$.code = strdup(code.c_str());
+        $$.place = strdup("");
     }
 ;
 
