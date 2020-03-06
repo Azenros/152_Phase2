@@ -13,12 +13,13 @@
 
   extern int line;
   extern int space;
-  extern char* yytext;
   extern string prog;
   char epsilon[1] = "";
   
   map<string, int> variables;
   map<string, int> functions;
+  
+  string newString(string s);
   //scroll down for full grammar
 %}
 
@@ -29,7 +30,7 @@
 	struct E {
 	  char* place;
 	  char* code;
-          bool array;
+      bool is_array;
 	} expr;
 
 	struct S {
@@ -177,7 +178,7 @@ statement:
         cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
     }
     | READ vars {
-        cout << "statement -> READ vars\n";
+        //cout << "statement -> READ vars\n";
         size_t in = 0;
         string re = $2.code;
         while (true) {
@@ -190,7 +191,7 @@ statement:
         $$.code = strdup(re.c_str());
     }
     | WRITE vars {
-        cout << "statement -> WRITE vars\n";
+        //cout << "statement -> WRITE vars\n";
         size_t in = 0;
         string wr = $2.code;
         while (true) {
@@ -204,12 +205,12 @@ statement:
             
     }
     | CONTINUE {
-        cout << "statement -> CONTINUE\n";
+        //cout << "statement -> CONTINUE\n";
         string con = "continue\n";
         $$.code = strdup(con.c_str());
     }
     | RETURN AS_expr {
-        cout << "statement -> RETURN AS_expr\n";
+        //cout << "statement -> RETURN AS_expr\n";
         string temp = $2.code;
         temp.append("ret ");
         temp.append($2.place);
@@ -224,7 +225,7 @@ OR_expr:
         cout << "OR_expr -> OR_expr OR AND_expr\n";
     }
     | AND_expr {
-        cout << "OR_expr -> AND_expr\n";
+        //cout << "OR_expr -> AND_expr\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place);
     }
@@ -235,7 +236,7 @@ AND_expr:
         cout << "AND_expr -> AND_expr AND NOT_expr\n";
     }
     | NOT_expr {
-        cout << "AND_expr -> NOT_expr\n";
+        //cout << "AND_expr -> NOT_expr\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place);
     }
@@ -246,7 +247,7 @@ NOT_expr:
         cout << "NOT_expr -> NOT REL_expr\n";
     }
     | REL_expr {
-        cout << "NOT_expr -> REL_expr\n";
+        //cout << "NOT_expr -> REL_expr\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place);
     }
@@ -260,13 +261,13 @@ REL_expr:
         cout << "REL_expr -> L_PAREN OR_expr R_PAREN\n";
     }
     | TRUE {
-        cout << "REL_expr -> TRUE\n";
+        //cout << "REL_expr -> TRUE\n";
         string t = "1";
         $$.code = strdup("");
         $$.place = strdup(t.c_str());
     }
     | FALSE {
-        cout << "REL_expr -> FALSE\n";
+        //cout << "REL_expr -> FALSE\n";
         string f = "0";
         $$.code = strdup("");
         $$.place = strdup(f.c_str());
@@ -314,32 +315,88 @@ comp:
 
 AS_expr:
     MDM_expr { 
-        cout << "AS_expr -> MDM_expr\n";
+        //cout << "AS_expr -> MDM_expr\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place); 
     }
     | MDM_expr ADD AS_expr { 
-        cout << "AS_expr -> MDM_expr ADD AS_expr\n";
+        //cout << "AS_expr -> MDM_expr ADD AS_expr\n";
+        string code = $1.code;
+        code.append($3.code);
+        code.append(". ");
+        code.append($$.place);
+        code.append("\n+ ");
+        code.append($$.place);
+        code.append(", ");
+        code.append($1.place);
+        code.append(", ");
+        code.append($3.place);
+        $$.code = strdup(code.c_str());
+
     }
     | MDM_expr SUB AS_expr { 
-        cout << "AS_expr -> MDM_expr SUB AS_expr\n";
+        //cout << "AS_expr -> MDM_expr SUB AS_expr\n";
+        string code = $1.code;
+        code.append($3.code);
+        code.append(". ");
+        code.append($$.place);
+        code.append("\n- ");
+        code.append($$.place);
+        code.append(", ");
+        code.append($1.place);
+        code.append(", ");
+        code.append($3.place);
+        $$.code = strdup(code.c_str());
     }
 ;
 
 MDM_expr:
     NEG_term { 
-        cout << "MDM_expr -> NEG_term\n";
+        //cout << "MDM_expr -> NEG_term\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place); 
     }
     | NEG_term MOD MDM_expr { 
-        cout << "MDM_expr -> NEG_term MOD MDM_expr\n";
+        //cout << "MDM_expr -> NEG_term MOD MDM_expr\n";
+        string code = $1.code;
+        code.append($3.code);
+        code.append(". ");
+        code.append($$.place);
+        code.append("\n% ");
+        code.append($$.place);
+        code.append(", ");
+        code.append($1.place);
+        code.append(", ");
+        code.append($3.place);
+        $$.code = strdup(code.c_str());
     }
     | NEG_term MULT MDM_expr { 
-        cout << "MDM_expr -> NEG_term MULT MDM_expr\n";
+        //cout << "MDM_expr -> NEG_term MULT MDM_expr\n";
+        string code = $1.code;
+        code.append($3.code);
+        code.append(". ");
+        code.append($$.place);
+        code.append("\n* ");
+        code.append($$.place);
+        code.append(", ");
+        code.append($1.place);
+        code.append(", ");
+        code.append($3.place);
+        $$.code = strdup(code.c_str());
     }
     | NEG_term DIV MDM_expr	{ 
-        cout << "MDM_expr -> NEG_term DIV MDM_expr\n";
+        //cout << "MDM_expr -> NEG_term DIV MDM_expr\n";
+        string code = $1.code;
+        code.append($3.code);
+        code.append(". ");
+        code.append($$.place);
+        code.append("\n/ ");
+        code.append($$.place);
+        code.append(", ");
+        code.append($1.place);
+        code.append(", ");
+        code.append($3.place);
+        $$.code = strdup(code.c_str());
     }
 ;
 
@@ -348,7 +405,7 @@ NEG_term:
         cout << "NEG_term -> SUB NEG_term\n";
     }
     | term {
-        cout << "NEG_term -> NEG_term\n";
+        //cout << "NEG_term -> NEG_term\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place);
     }
@@ -359,13 +416,35 @@ NEG_term:
 
 term:
     var { 
-        cout << "term -> var\n"; 
+        //cout << "term -> var\n"; 
+        if ($$.is_array) {
+            string code = newString("_t");
+            string place = $1.code;
+            place.append(". ");
+            place.append(code);
+            place.append("\n=[] ");
+            place.append(code);
+            place.append(", ");
+            place.append($1.place);
+            place.append("\n");
+            $$.code = strdup(code.c_str());
+            $$.place = strdup(place.c_str());
+            $$.is_array = false;            
+        }
+        else {
+            $$.code = strdup($1.code);
+            $$.place = strdup($1.place);
+        }
     }
     | L_PAREN AS_expr R_PAREN {
-        cout << "term -> L_PAREN AS_expr R_PAREN\n";
+        //cout << "term -> L_PAREN AS_expr R_PAREN\n";
+        $$.code = strdup($2.code);
+        $$.place = strdup($2.place);
     }
     | NUMBER {
-        cout << "term -> NUMBER " << ($1) << endl;
+        //cout << "term -> NUMBER " << ($1) << endl;
+        $$.code = strdup("");
+        $$.place = strdup(to_string($1).c_str());
     }
 ;
 
@@ -404,7 +483,7 @@ vars:
 
 var:
     IDENT {
-        cout << "var -> IDENT " << ($1) << endl;
+        //cout << "var -> IDENT " << ($1) << endl;
         char emess[128] = "abc";
         if (variables.find($1) != variables.end()) {
             snprintf(emess,128,"Redeclaration of variable %s", $1);
@@ -423,9 +502,15 @@ var:
 
 %%
 
+string newString(string s) {
+    static int index = 0;
+    string temp = s + to_string(index++);
+    return temp;
+}
+
+
 int yyerror(string s) {
     extern int line, space;
-    extern char* yytext;
     cout << "Error at line " << line << ", column " << space << ": " << s << endl;
     exit(1);
     return 0;
