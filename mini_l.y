@@ -4,6 +4,7 @@
   #include <string>
   #include <string.h>
   #include <sstream>
+  #include <vector>
   #include <map>
   #include <stdlib.h>
   using namespace std;
@@ -22,6 +23,8 @@
   map<string, int> functions;
   
   string newString(string s);
+  
+  vector<string> reservedWords = {"FUNCTION", "BEGIN_PARAMS", "END_PARAMS", "BEGIN_LOCALS", "END_LOCALS", "BEGIN_BODY", "END_BODY", "INTEGER", "ARRAY", "OF", "IF", "THEN", "ENDIF", "ELSE", "WHILE", "DO", "FOREACH", "IN", "BEGINLOOP", "ENDLOOP", "CONTINUE", "READ", "WRITE", "AND", "OR", "NOT", "TRUE", "FALSE", "RETURN", "SUB", "ADD", "MULT", "DIV", "MOD", "EQ", "NEQ", "LT", "GT", "LTE", "GTE", "L_PAREN", "R_PAREN", "L_SQUARE_BRACKET", "R_SQUARE_BRACKET", "COLON", "SEMICOLON", "COMMA", "ASSIGN", "function", "Ident", "beginparams", "endparams", "beginlocals", "endlocals", "integer", "beginbody", "endbody", "beginloop", "endloop", "if", "endif", "foreach", "continue", "while", "else", "read", "do", "write"};
   //scroll down for full grammar
 %}
 
@@ -43,7 +46,7 @@
 %start start
 
 %type <stat> statements statement
-%type <expr> OR_expr AND_expr REL_expr NOT_expr AS_expr MDM_expr NEG_term term term_id term_ex term_exp comp declarations declaration declaration_2 identify vars var fident
+%type <expr> OR_expr AND_expr REL_expr NOT_expr AS_expr MDM_expr NEG_term term term_id term_ex term_exp comp declarations declaration identify vars var fident
 
 %token FUNCTION BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY INTEGER ARRAY FOR OF IF THEN ENDIF ELSE WHILE DO BEGINLOOP ENDLOOP CONTINUE READ WRITE TRUE FALSE SEMICOLON COLON COMMA L_PAREN R_PAREN L_SQUARE_BRACKET R_SQUARE_BRACKET ASSIGN RETURN
 %token <ival> NUMBER
@@ -85,13 +88,37 @@ program:
 
 function:
     FUNCTION fident SEMICOLON parameters declarations parameters declarations parameters statements parameters {
-        cout << "function -> FUNCTION fident SEMICOLON parameters declarations parameters declarations parameters statements parameters\n"; 
+        //cout << "function -> FUNCTION fident SEMICOLON parameters declarations parameters declarations parameters statements parameters\n";
+        ostringstream oss;
+        string init = $5.code;
+        string statements($9.code);
+        int param_num = 0;
+        oss << "func" << $2.place << "\n" << $2.code << init;
+
+        while (init.find(".") != string::npos) {
+            size_t pos = init.find(".");
+            string param_str = ", $"; 
+            init.replace(pos, 1, "=");
+            param_str.append(to_string(param_num++));
+            param_str.append("\n");
+            init.replace(init.find("\n", pos), 1, param_str);
+        }
+        oss << init << $7.code;
+        
+        
+        if (statements.find("continue") != string::npos) {
+            cout << "Error: Continue outside loop in function " << $2.place << "\n";
+        }
+        oss << statements << "endfunc\n";
+        
+        string result = oss.str();
+        cout << result;
     }
 ;
 
 fident:
     IDENT {
-        cout << "fident -> IDENT " << $1 << endl;
+        //cout << "fident -> IDENT " << $1 << endl;
         if (functions.find($1) != functions.end()) {
             ostringstream oss;
             oss << "Redeclaration of function " << $1;
@@ -107,22 +134,27 @@ fident:
 
 parameters:
     BEGIN_PARAMS { 
-        cout << "parameters -> BEGIN_PARAMS\n"; 
+        //cout << "parameters -> BEGIN_PARAMS\n"; 
     }
     | END_PARAMS BEGIN_LOCALS { 
-        cout << "parameters -> END_PARAMS BEGIN_LOCALS\n"; 
+        //cout << "parameters -> END_PARAMS BEGIN_LOCALS\n"; 
     }
     | END_LOCALS BEGIN_BODY { 
-        cout << "parameters -> END_LOCALS BEGIN_BODY\n"; 
+        //cout << "parameters -> END_LOCALS BEGIN_BODY\n"; 
     }
     | END_BODY { 
-        cout << "parameters -> END_BODY\n"; 
+        //cout << "parameters -> END_BODY\n"; 
     }
 ;
 
 declarations:
     declaration SEMICOLON declarations {
-        cout << "declarations -> declaration SEMICOLON declarations\n"; 
+        //cout << "declarations -> declaration SEMICOLON declarations\n";
+        ostringstream oss;
+        oss << $1.code << $3.code;
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup("");
     }
     | %empty { 
         //cout << "declarations -> epsilon\n"; 
@@ -132,8 +164,57 @@ declarations:
 ;
 
 declaration:
-    identify COLON declaration_2 {
-        cout << "declaration -> identify COLON declaration_2\n"; 
+    identify COLON INTEGER {
+        //cout << "declaration -> identify COLON INTEGER\n"; 
+        ostringstream oss;
+        string vars($1.place);
+        bool con = true;
+        size_t oPos = 0;
+        size_t cPos = 0;
+        bool reserved = false;
+        string fVar = "";
+        
+        while (con) {
+            cPos = vars.find("|", oPos);
+            if (cPos == string::npos) {
+                fVar = vars.substr(oPos,cPos);
+                con = false;
+            }
+            else {
+                size_t length = cPos - oPos;
+                fVar = vars.substr(oPos, length);
+            }
+            oss << ". " << fVar << "\n";
+            
+            for (unsigned i = 0; i < reservedWords.size(); i++) {
+                if (fVar == reservedWords[i]) {
+                    reserved = true;
+                }
+            }
+            
+            if (variables.find(fVar) != variables.end()) {
+                ostringstream ess;
+                ess << "Reclaration of variable " << fVar.c_str();
+                yyerror(ess.str()); 
+            }
+            else if (reserved) {
+                ostringstream ess;
+                ess << "Invalid declaration of reserved words " << fVar.c_str();
+                yyerror(ess.str());
+            }
+            else {
+                variables.insert(pair<string,int>(fVar,0));
+            }
+            oPos = cPos++;
+        }
+        
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup("");
+    }
+    
+    | identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
+        cout << "declaration -> identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"; 
     }
 ;
 
@@ -144,7 +225,7 @@ identify:
         $$.place = strdup($1.place);
     }
     | IDENT COMMA identify {
-        cout << "identify -> IDENT " << $1 << " COMMA identify\n";
+        //cout << "identify -> IDENT " << $1 << " COMMA identify\n";
         ostringstream oss;
         oss << $1.place << "|" << $3.place;
         string code = oss.str();
@@ -153,14 +234,6 @@ identify:
     }
 ;
 
-declaration_2:
-    INTEGER {
-        cout << "declaration_2 -> INTEGER\n"; 
-    }
-    | ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
-        cout << "declaration_2 -> ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"; 
-    }
-;
 
 statements:
     statement SEMICOLON statements {
@@ -416,7 +489,19 @@ MDM_expr:
 
 NEG_term:
     SUB term { 
-        cout << "NEG_term -> SUB NEG_term\n";
+        //cout << "NEG_term -> SUB NEG_term\n";
+        ostringstream oss;
+        oss << $2.code << ". " << $$.place << "\n";
+        if ($2.is_array) {
+            oss << "=[] "; 
+        }
+        else {
+            oss << "= "; 
+        }
+        oss << "* " << $$.place << ", " << $$.place << ", -1\n";
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.is_array = false;
     }
     | term {
         //cout << "NEG_term -> NEG_term\n";
@@ -460,10 +545,14 @@ term:
 
 term_id:
     L_PAREN term_ex R_PAREN {
-        cout << "term_id -> L_PAREN term_ex R_PAREN\n";
+        //cout << "term_id -> L_PAREN term_ex R_PAREN\n";
+        $$.code = strdup($2.code);
+        $$.place = strdup($2.place);
     }
     | L_PAREN R_PAREN {
-        cout << "term_id-> L_PAREN  R_PAREN\n";
+        //cout << "term_id-> L_PAREN  R_PAREN\n";
+        $$.code = strdup("");
+        $$.place = strdup("");
     }
 ;
 
@@ -478,7 +567,9 @@ term_exp:
         cout << "term_exp -> COMMA term_ex\n";
     }
     | %empty {
-        cout << "term_exp -> epsilon\n";
+        //cout << "term_exp -> epsilon\n";
+        $$.code = strdup("");
+        $$.place = strdup("");
     }
 ;
 
@@ -549,7 +640,7 @@ var:
         string place = oss.str()
         $$.code = strdup($3.code);
         $$.place = strdup(place.c_str());
-        $$.array = true;
+        $$.is_array = true;
     }
 ;
 
