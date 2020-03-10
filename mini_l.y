@@ -125,7 +125,9 @@ declarations:
         cout << "declarations -> declaration SEMICOLON declarations\n"; 
     }
     | %empty { 
-        cout << "declarations -> epsilon\n"; 
+        //cout << "declarations -> epsilon\n"; 
+        $$.code = strdup("");
+        $$.place = strdup("");
     }
 ;
 
@@ -137,10 +139,17 @@ declaration:
 
 identify:
     IDENT {
-        cout << "identify -> IDENT " << $1 << endl;
+        //cout << "identify -> IDENT " << $1 << endl;
+        $$.code = strdup("");
+        $$.place = strdup($1.place);
     }
     | IDENT COMMA identify {
         cout << "identify -> IDENT " << $1 << " COMMA identify\n";
+        ostringstream oss;
+        oss << $1.place << "|" << $3.place;
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup("");
     }
 ;
 
@@ -155,9 +164,19 @@ declaration_2:
 
 statements:
     statement SEMICOLON statements {
-        cout << "statements -> statement SEMICOLON statements\n";
+        //cout << "statements -> statement SEMICOLON statements\n";
+        ostringstream oss;
+        oss << $1.code << $3.code;
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
     }
-    | statement SEMICOLON { cout << "statements -> statement SEMICOLON\n"; }
+    | statement SEMICOLON { 
+        //cout << "statements -> statement SEMICOLON\n"; 
+        ostringstream oss;
+        oss << $1.code;
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+    }
 ;
 
 statement:
