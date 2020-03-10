@@ -3,6 +3,7 @@
   #include <stdio.h>
   #include <string>
   #include <string.h>
+  #include <sstream>
   #include <map>
   #include <stdlib.h>
   using namespace std;
@@ -15,6 +16,7 @@
   extern int space;
   extern string prog;
   char epsilon[1] = "";
+  static int ind = 0;
   
   map<string, int> variables;
   map<string, int> functions;
@@ -90,10 +92,10 @@ function:
 fident:
     IDENT {
         cout << "fident -> IDENT " << $1 << endl;
-        char emess[128] = "abc";
         if (functions.find($1) != functions.end()) {
-            snprintf(emess,128,"Redeclaration of function %s", $1);
-            yyerror(emess);
+            ostringstream oss;
+            oss << "Redeclaration of function " << $1;
+            yyerror(oss.str());
         }
         else {
             functions.insert(pair<string,int>($1,0));
@@ -211,18 +213,24 @@ statement:
     }
     | RETURN AS_expr {
         //cout << "statement -> RETURN AS_expr\n";
-        string temp = $2.code;
-        temp.append("ret ");
-        temp.append($2.place);
-        temp.append("\n");
-        $$.code = strdup(temp.c_str());
+        ostringstream oss;
+        oss << $2.code << "ret " << $2.place << "\n";
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
     }
 		
 ;
 
 OR_expr:
     OR_expr OR AND_expr {
-        cout << "OR_expr -> OR_expr OR AND_expr\n";
+        //cout << "OR_expr -> OR_expr OR AND_expr\n";
+        ostringstream oss;
+        string temp = newString("_t");
+        oss << $1.code << $3.code << ". " << temp << "\n|| " << temp << ", " << $1.place << ", " << $3.place << "\n";
+        
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup(temp.c_str());
     }
     | AND_expr {
         //cout << "OR_expr -> AND_expr\n";
@@ -233,7 +241,14 @@ OR_expr:
 
 AND_expr:
     AND_expr AND NOT_expr {
-        cout << "AND_expr -> AND_expr AND NOT_expr\n";
+        //cout << "AND_expr -> AND_expr AND NOT_expr\n";
+        ostringstream oss;
+        string temp = newString("_t");
+        oss << $1.code << $3.code << ". " << temp << "\n&& " << temp << ", " << $1.place << ", " << $3.place << "\n";
+        
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup(temp.c_str());
     }
     | NOT_expr {
         //cout << "AND_expr -> NOT_expr\n";
@@ -244,7 +259,13 @@ AND_expr:
 
 NOT_expr:
     NOT REL_expr {
-        cout << "NOT_expr -> NOT REL_expr\n";
+        //cout << "NOT_expr -> NOT REL_expr\n";
+        ostringstream oss;
+        string temp = newString("_t");
+        oss << $2.code << ". " << temp << "\n! " << temp << ", " << $2.place << "\n";
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup(temp.c_str());
     }
     | REL_expr {
         //cout << "NOT_expr -> REL_expr\n";
@@ -255,10 +276,19 @@ NOT_expr:
 
 REL_expr:
     AS_expr comp AS_expr {
-        cout << "REL_expr -> AS_expr comp AS_expr\n";
+        //cout << "REL_expr -> AS_expr comp AS_expr\n";
+        ostringstream oss;
+        string temp = newString("_t");
+        oss << $1.code << $3.code < ". " << temp << "\n" << $2.place << temp << ", " << $1.place << ", " << $3.place << "\n";
+        
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
+        $$.place = strdup(temp.c_str());
     }
     | L_PAREN OR_expr R_PAREN {
-        cout << "REL_expr -> L_PAREN OR_expr R_PAREN\n";
+        //cout << "REL_expr -> L_PAREN OR_expr R_PAREN\n";
+        $$.code = strdup($2.code);
+        $$.place = strdup($2.place);
     }
     | TRUE {
         //cout << "REL_expr -> TRUE\n";
@@ -321,31 +351,17 @@ AS_expr:
     }
     | MDM_expr ADD AS_expr { 
         //cout << "AS_expr -> MDM_expr ADD AS_expr\n";
-        string code = $1.code;
-        code.append($3.code);
-        code.append(". ");
-        code.append($$.place);
-        code.append("\n+ ");
-        code.append($$.place);
-        code.append(", ");
-        code.append($1.place);
-        code.append(", ");
-        code.append($3.place);
+        ostringstream oss;
+        oss << $1.code << $3.code << ". " << $$.place << "\n+ " << $$.place << ", " << $1.place << ", " << $3.place;
+        string code = oss.str();
         $$.code = strdup(code.c_str());
 
     }
     | MDM_expr SUB AS_expr { 
         //cout << "AS_expr -> MDM_expr SUB AS_expr\n";
-        string code = $1.code;
-        code.append($3.code);
-        code.append(". ");
-        code.append($$.place);
-        code.append("\n- ");
-        code.append($$.place);
-        code.append(", ");
-        code.append($1.place);
-        code.append(", ");
-        code.append($3.place);
+        ostringstream oss;
+        oss << $1.code << $3.code << ". " << $$.place << "\n- " << $$.place << ", " << $1.place << ", " << $3.place;
+        string code = oss.str();
         $$.code = strdup(code.c_str());
     }
 ;
@@ -358,44 +374,23 @@ MDM_expr:
     }
     | NEG_term MOD MDM_expr { 
         //cout << "MDM_expr -> NEG_term MOD MDM_expr\n";
-        string code = $1.code;
-        code.append($3.code);
-        code.append(". ");
-        code.append($$.place);
-        code.append("\n% ");
-        code.append($$.place);
-        code.append(", ");
-        code.append($1.place);
-        code.append(", ");
-        code.append($3.place);
+        ostringstream oss;
+        oss << $1.code << $3.code << ". " << $$.place << "\n% " << $$.place << ", " << $1.place << ", " << $3.place;
+        string code = oss.str();
         $$.code = strdup(code.c_str());
     }
     | NEG_term MULT MDM_expr { 
         //cout << "MDM_expr -> NEG_term MULT MDM_expr\n";
-        string code = $1.code;
-        code.append($3.code);
-        code.append(". ");
-        code.append($$.place);
-        code.append("\n* ");
-        code.append($$.place);
-        code.append(", ");
-        code.append($1.place);
-        code.append(", ");
-        code.append($3.place);
+        ostringstream oss;
+        oss << $1.code << $3.code << ". " << $$.place << "\n* " << $$.place << ", " << $1.place << ", " << $3.place;
+        string code = oss.str();
         $$.code = strdup(code.c_str());
     }
     | NEG_term DIV MDM_expr	{ 
         //cout << "MDM_expr -> NEG_term DIV MDM_expr\n";
-        string code = $1.code;
-        code.append($3.code);
-        code.append(". ");
-        code.append($$.place);
-        code.append("\n/ ");
-        code.append($$.place);
-        code.append(", ");
-        code.append($1.place);
-        code.append(", ");
-        code.append($3.place);
+        ostringstream oss;
+        oss << $1.code << $3.code << ". " << $$.place << "\n/ " << $$.place << ", " << $1.place << ", " << $3.place;
+        string code = oss.str();
         $$.code = strdup(code.c_str());
     }
 ;
@@ -418,17 +413,13 @@ term:
     var { 
         //cout << "term -> var\n"; 
         if ($$.is_array) {
-            string code = newString("_t");
-            string place = $1.code;
-            place.append(". ");
-            place.append(code);
-            place.append("\n=[] ");
-            place.append(code);
-            place.append(", ");
-            place.append($1.place);
-            place.append("\n");
+            ostringstream oss;
+            string n = newString("_t");
+            oss << $1.code << ". " << n << "\n=[] " << n << ", " << $1.place << "\n";
+            string code = oss.str();
+        
             $$.code = strdup(code.c_str());
-            $$.place = strdup(place.c_str());
+            $$.place = strdup(n.c_str());
             $$.is_array = false;            
         }
         else {
@@ -475,31 +466,35 @@ term_exp:
 vars:
     var COMMA vars {
         //cout << "vars -> var COMMA vars\n";
-        cout << "vars -> var\n";
-        string code = $1.code;
-        if ($1.array) {
-            code.append(".[]| ");
+        ostringstream oss;
+        oss << $1.code;
+        
+        if ($1.is_array) {
+            oss << ".[]| ";
         }
         else {
-            code.append(".| ");
+            oss << ".| ";
         }
-        code.append($1.place);
-        code.append("\n");
-        code.append($3.code);
+        oss << $1.place << "\n" << $3.code;
+        
+        string code = oss.str();
         $$.code = strdup(code.c_str());
         $$.place = strdup("");
     }
     | var {
         //cout << "vars -> var\n";
-        string code = $1.code;
-        if ($1.array) {
-            code.append(".[]| ");
+        ostringstream oss;
+        oss << $1.code;
+        
+        if ($1.is_array) {
+            oss << ".[]| ";
         }
         else {
-            code.append(".| ");
+            oss << ".| ";
         }
-        code.append($1.place);
-        code.append("\n");
+        oss << $1.place << "\n";
+        
+        string code = oss.str();
         $$.code = strdup(code.c_str());
         $$.place = strdup("");
     }
@@ -520,15 +515,30 @@ var:
         $$.place = strdup($1);
     }
     | IDENT L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
-        cout << "var -> IDENT " << ($1) << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
+        //cout << "var -> IDENT " << ($1) << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
+        char emess[128] = "abc";
+        if (variables.find((string)($1.place)) == variables.end()) {
+            snprintf(emess,128,"Use of undeclared variable %s", $1.place);
+            yyerror(emess);
+        }
+        else if (variables.find((string)($1.place))->second == 0) {
+            snprintf(emess,128,"Indexing a non-array variable %s", $1.place);
+            yyerror(emess);
+        }
+        ostringstream oss;
+        oss << $1.place << ", " << $3.place;
+        string place = oss.str()
+        $$.code = strdup($3.code);
+        $$.place = strdup(place.c_str());
+        $$.array = true;
     }
 ;
 
 %%
 
 string newString(string s) {
-    static int index = 0;
-    string temp = s + to_string(index++);
+    static int ind = 0;
+    string temp = s + to_string(ind++);
     return temp;
 }
 
