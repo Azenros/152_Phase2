@@ -253,23 +253,100 @@ statements:
 ;
 
 statement:
-    var ASSIGN AS_expr {
-        cout << "statement -> var ASSIGN AS_expr\n";
+        var ASSIGN AS_expr {
+        //cout << "statement -> var ASSIGN AS_expr\n"
+        string vaa; 
+        ostringstream oss;
+        vaa = $3.place;
+        oss << $1.code << $3.code;
+        if ($1.is_array) { oss << "[]="; }
+        else if ($3.is_array) { oss << "= ";}
+        else { oss << "= "; }
+        oss << $1.place << ", " << $3.place;
+        string code = oss.str() + "\n";
+        $$.code = strdup(code.c_str());
     }
     | IF OR_expr THEN statements ENDIF {
-        cout << "statement -> IF OR_expr THEN statements ENDIF\n";
+        //cout << "statement -> IF OR_expr THEN statements ENDIF\n";
+        string ifor = newString('L');
+        string post = newString('L');
+        ostringstream oss;
+        oss << $2.code;
+        oss << "?:= " << ifor << ", " << $2.place << "\n";
+        oss << $6.code;
+        oss << ":= " << post << "\n";
+        oss << ": " << ifor << "\n";
+        oss << $4.code;
+        oss << ": " << post << "\n";
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
     }
     | IF OR_expr THEN statements ELSE statements ENDIF {
-        cout << "statement -> IF OR_expr THEN statements ELSE statements ENDIF\n";
+        //cout << "statement -> IF OR_expr THEN statements ELSE statements ENDIF\n";
+        string ifor = newString('L');
+        string post = newString('L');
+        ostringstream oss;
+        oss << $2.code;
+        oss << "?:= " << ifor << ", " << $2.place << "\n";
+        oss << $6.code;
+        oss << ":= " << post << "\n";
+        oss << ": " << ifor << "\n";
+        oss << $4.code;
+        oss << ": " << post << "\n";
+        string code = oss.str();
+        $$.code = strdup(code.c_str());
     }
     | WHILE OR_expr BEGINLOOP statements ENDLOOP {
-        cout << "statement -> WHILE OR_expr BEGINLOOP statements ENDLOOP\n";
+        //cout << "statement -> WHILE OR_expr BEGINLOOP statements ENDLOOP\n";
+        string begin = newString('L');
+        string state = newString('L');
+        string end = newString('L');
+        string code = $4.code;
+        ostringstream oss;
+        size_t position = code.find("continue");
+        while (position != string::npos) {
+            code.replace(position, 8, ":= " + begin);
+            position = code.find("continue");
+        }
+        oss << ": " << begin << "\n" << $2.code << "?: " << state << ", " 
+        << $2.place << "\n" << ":= " << end << "\n" << ": " << state << "\n"
+        << code << ":= " << begin << "\n" << ": " << end << "\n";
+        $$.code = strdup(oss.str().c_str());
     }
     | DO BEGINLOOP statements ENDLOOP WHILE OR_expr {
-        cout << "statement -> DO BEGINLOOP statements ENDLOOP WHILE OR_expr\n";
+        //cout << "statement -> DO BEGINLOOP statements ENDLOOP WHILE OR_expr\n";
+        string begin = newString('L');
+        string state = newString('L');
+        string code = $3.code;
+        ostringstream oss;
+        size_t position = code.find("continue");
+        while (position != string::npos) {
+            code.replace(position, 8, ":= " + state);
+            position = code.find("continue");
+        }
+        oss << ": " << begin << "\n" << code << ": " << state << "\n"
+        << $6.code << "?:= " << begin << ", " <<$6.place << "\n";
+        $$.code = strdup(oss.str().c_str());
     }
     | FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var ASSIGN AS_expr BEGINLOOP statements ENDLOOP {
-        cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
+        //cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
+        string var = newString('L');
+        string state = newString('L');
+        string inc = newString('L'); // change me?
+        string end = newString('L');
+        ostringstream oss;
+        string code = $12.code;
+        size_t position = code.find("continue") // find at position value of continue
+        while (position != string::npos) { // as long as its not the end of string
+            code.replace(position, 8, ":= " + inc);
+            position = code.find("continue");
+        }
+        oss << $2.code;
+        string mid = to_string($4);
+        if ($2.is_array) { oss << "[]= "; } else { oss << "= "; }
+        oss << $2.place << ", " << mid << "\n" << ": " var << "\n"
+        << $6.code << "?:= " << state << ", "
+        << $6.place << "\n" << ":= " << end << "\n" 
     }
     | READ vars {
         //cout << "statement -> READ vars\n";
