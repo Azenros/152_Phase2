@@ -106,7 +106,6 @@ function:
         }
         oss << init << $7.code;
         
-        
         if (statements.find("continue") != string::npos) {
             cout << "Error: Continue outside loop in function " << $2.place << "\n";
         }
@@ -215,7 +214,7 @@ declaration:
     }
     
     | identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER {
-        cout << "declaration -> identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"; 
+        //cout << "declaration -> identify COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER\n"; 
         if ($5 <= 0) {
             ostringstream ess;
             ess << "Error: Array size cannot be less than 1";
@@ -228,7 +227,6 @@ declaration:
         bool con = true;
         size_t oPos = 0;
         size_t cPos = 0;
-        
         
         while (con) {
             cPos = vars.find("|", oPos);
@@ -296,15 +294,22 @@ statements:
 statement:
         var ASSIGN AS_expr {
         //cout << "statement -> var ASSIGN AS_expr\n"
-        string vaa; 
+        string vaa = $3.place; 
         ostringstream oss;
-        vaa = $3.place;
         oss << $1.code << $3.code;
-        if ($1.is_array) { oss << "[]="; }
-        else if ($3.is_array) { oss << "= ";}
-        else { oss << "= "; }
-        oss << $1.place << ", " << $3.place;
-        string code = oss.str() + "\n";
+        if ($1.is_array) { 
+            oss << "[]="; 
+        }
+        else if ($3.is_array) {
+            oss << "= ";
+        }
+        else { 
+            oss << "= "; 
+        }
+        
+        oss << $1.place << ", " << $3.place << "\n";
+        
+        string code = oss.str();
         $$.code = strdup(code.c_str());
     }
     | IF OR_expr THEN statements ENDIF {
@@ -312,12 +317,9 @@ statement:
         string ifor = newString("L");
         string post = newString("L");
         ostringstream oss;
-        oss << $2.code;
-        oss << "?:= " << ifor << ", " << $2.place << "\n";
-        oss << ":= " << post << "\n";
-        oss << ": " << ifor << "\n";
-        oss << $4.code;
-        oss << ": " << post << "\n";
+        oss << $2.code << "?:= " << ifor << ", " << $2.place << "\n";
+        oss << ":= " << post << "\n" << ": " << ifor << "\n";
+        oss << $4.code << ": " << post << "\n";
         string code = oss.str();
         $$.code = strdup(code.c_str());
     }
@@ -326,13 +328,14 @@ statement:
         string ifor = newString("L");
         string post = newString("L");
         ostringstream oss;
-        oss << $2.code;
-        oss << "?:= " << ifor << ", " << $2.place << "\n";
-        oss << $6.code;
-        oss << ":= " << post << "\n";
-        oss << ": " << ifor << "\n";
-        oss << $4.code;
-        oss << ": " << post << "\n";
+        oss << $2.code
+            << "?:= " << ifor << ", " 
+            << $2.place << "\n"
+            << $6.code << ":= " << post << "\n"
+            << ": " << ifor << "\n"
+            << $4.code
+            << ": " << post << "\n";
+            
         string code = oss.str();
         $$.code = strdup(code.c_str());
     }
@@ -348,10 +351,16 @@ statement:
             code.replace(position, 8, ":= " + begin);
             position = code.find("continue");
         }
-        oss << ": " << begin << "\n" << $2.code << "?: " << state << ", " 
-            << $2.place << "\n" << ":= " << end << "\n" << ": " << state 
-            << "\n"<< code << ":= " << begin << "\n" << ": " << end << "\n";
-        $$.code = strdup(oss.str().c_str());
+        oss << ": " << begin << "\n" 
+            << $2.code << "?: " << state << ", " 
+            << $2.place << "\n" 
+            << ":= " << end << "\n" 
+            << ": " << state << "\n"
+            << code << ":= " << begin << "\n" 
+            << ": " << end << "\n";
+            
+        code = oss.str();    
+        $$.code = strdup(code.c_str());
     }
     | DO BEGINLOOP statements ENDLOOP WHILE OR_expr {
         //cout << "statement -> DO BEGINLOOP statements ENDLOOP WHILE OR_expr\n";
@@ -364,29 +373,62 @@ statement:
             code.replace(position, 8, ":= " + state);
             position = code.find("continue");
         }
-        oss << ": " << begin << "\n" << code << ": " << state << "\n"
-        << $6.code << "?:= " << begin << ", " << $6.place << "\n";
-        $$.code = strdup(oss.str().c_str());
+        oss << ": " << begin << "\n" 
+            << code << ": " << state << "\n"
+            << $6.code << "?:= " << begin << ", " << $6.place << "\n";
+        
+        code = oss.str();    
+        $$.code = strdup(code.c_str());
     }
     | FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var ASSIGN AS_expr BEGINLOOP statements ENDLOOP {
         //cout << "statement -> FOR var ASSIGN NUMBER SEMICOLON OR_expr SEMICOLON var Assign AS_expr BEGINLOOP statements ENDLOOP\n";
-        string var = newString("L");
-        string state = newString("L");
-        string inc = newString("L"); // change me?
-        string end = newString("L");
-        ostringstream oss;
+        string dst = newString("_t");
+        
+        string var = newString("L"); // condition
+        string state = newString("L"); //inner
+        string inc = newString("L"); // change me?  increment
+        string end = newString("L"); //after
+        string mid = to_string($4); //middle
         string code = $12.code;
+        ostringstream oss;
+        
         size_t position = code.find("continue"); // find at position value of continue
         while (position != string::npos) { // as long as its not the end of string
             code.replace(position, 8, ":= " + inc);
             position = code.find("continue");
         }
+        
         oss << $2.code;
-        string mid = to_string($4);
-        if ($2.is_array) { oss << "[]= "; } else { oss << "= "; }
-        oss << $2.place << ", " << mid << "\n" << ": " << var << "\n"
-            << $6.code << "?:= " << state << ", "
-            << $6.place << "\n" << ":= " << end << "\n";
+        
+        if ($2.is_array) { 
+            oss << "[]= "; 
+        } 
+        else { 
+            oss << "= "; 
+        }
+        
+        oss << $2.place << ", " << mid << "\n" 
+            << ": " << var << "\n"
+            << $6.code << "?:= " << state << ", " << $6.place << "\n" 
+            << ":= " << end << "\n" 
+            << ": " << state << "\n"
+            << code << ": " << inc << "\n"
+            << $8.code << $10.code;
+            
+        if ($8.is_array) { 
+            oss << "[]= "; 
+        } 
+        else { 
+            oss << "= "; 
+        }
+        
+        oss << $8.place << ", " << $10.place << "\n"
+            << ":= " << var << "\n"
+            << ": " << end << "\n";
+            
+        code = oss.str();
+        $$.code = strdup(code.c_str());
+        
     }
     | READ vars {
         //cout << "statement -> READ vars\n";
@@ -522,37 +564,37 @@ comp:
         //cout << "comp -> GT\n";
         string cmp = ">";
         $$.code = strdup("");
-        $$.place = strdup(cmp.c_str());
+        $$.place = strdup(">");
     }
     | LT {
         //cout << "comp -> LT\n";
         string cmp = "<";
         $$.code = strdup("");
-        $$.place = strdup(cmp.c_str());
+        $$.place = strdup("<");
     }
     | GTE {
         //cout << "comp -> GTE\n";
         string cmp = ">=";
         $$.code = strdup("");
-        $$.place = strdup(cmp.c_str());
+        $$.place = strdup(">=");
     }
     | LTE {
         //cout << "comp -> LTE\n";
         string cmp = "<=";
         $$.code = strdup("");
-        $$.place = strdup(cmp.c_str());
+        $$.place = strdup("<=");
     }
     | EQ {
         //cout << "comp -> EQ\n";
         string cmp = "==";
         $$.code = strdup("");
-        $$.place = strdup(cmp.c_str());
+        $$.place = strdup("==");
     }
     | NEQ {
         //cout << "comp -> NEQ\n";
         string cmp = "!=";
         $$.code = strdup("");
-        $$.place = strdup(cmp.c_str());
+        $$.place = strdup("!=");
     }
 ;
 
@@ -569,6 +611,7 @@ AS_expr:
             << ", " << $1.place << ", " << $3.place;
         string code = oss.str();
         $$.code = strdup(code.c_str());
+        $$.place = strdup(newString("_t").c_str());
 
     }
     | MDM_expr SUB AS_expr { 
@@ -578,6 +621,7 @@ AS_expr:
             << ", " << $1.place << ", " << $3.place;
         string code = oss.str();
         $$.code = strdup(code.c_str());
+        $$.place = strdup(newString("_t").c_str());
     }
 ;
 
@@ -594,6 +638,7 @@ MDM_expr:
             << ", " << $1.place << ", " << $3.place;
         string code = oss.str();
         $$.code = strdup(code.c_str());
+        $$.place = strdup(newString("_t").c_str());
     }
     | NEG_term MULT MDM_expr { 
         //cout << "MDM_expr -> NEG_term MULT MDM_expr\n";
@@ -602,6 +647,7 @@ MDM_expr:
             << ", " << $1.place << ", " << $3.place;
         string code = oss.str();
         $$.code = strdup(code.c_str());
+        $$.place = strdup(newString("_t").c_str());
     }
     | NEG_term DIV MDM_expr	{ 
         //cout << "MDM_expr -> NEG_term DIV MDM_expr\n";
@@ -610,6 +656,7 @@ MDM_expr:
             << ", " << $1.place << ", " << $3.place;
         string code = oss.str();
         $$.code = strdup(code.c_str());
+        $$.place = strdup(newString("_t").c_str());
     }
 ;
 
@@ -617,6 +664,7 @@ NEG_term:
     SUB term { 
         //cout << "NEG_term -> SUB NEG_term\n";
         ostringstream oss;
+        string temp = newString("_t");
         oss << $2.code << ". " << $$.place << "\n";
         if ($2.is_array) {
             oss << "=[] "; 
@@ -627,6 +675,7 @@ NEG_term:
         oss << "* " << $$.place << ", " << $$.place << ", -1\n";
         string code = oss.str();
         $$.code = strdup(code.c_str());
+        $$.place = strdup(temp.c_str());
         $$.is_array = false;
     }
     | term {
