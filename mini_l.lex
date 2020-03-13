@@ -92,6 +92,6 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 %%
 
 int main(int argc, char* argv[]) {
-    prog = strdup(argv[1]);
+    prog = strdup(argv[0]);
     yyparse();
 }
