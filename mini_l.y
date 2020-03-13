@@ -80,7 +80,7 @@ program:
             string s = "Function main not declared";
             yyerror(s);
         }
-        if (variables.find(prog) != functions.end()) {
+        if (variables.find(prog) == functions.end()) {
             string s = "Program name declared as variable";
             yyerror(s);
         }
@@ -793,7 +793,7 @@ var:
     IDENT {
         //cout << "var -> IDENT " << ($1) << endl;
         char emess[128] = "abc";
-        if (variables.find($1) != variables.end()) {
+        if (variables.find($1) == variables.end()) {
             snprintf(emess,128,"Redeclaration of variable %s", $1);
             yyerror(emess);
         }
