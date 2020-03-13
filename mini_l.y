@@ -835,7 +835,7 @@ string newString(string s) {
 int yyerror(string s) {
     extern int line, space;
     cout << "Error at line " << line << ", column " << space << ": " << s << endl;
-    exit(1);
+    //exit(1);
     return 0;
 } 
 int yyerror(char* c) {
