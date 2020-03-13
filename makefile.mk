@@ -3,7 +3,7 @@
 OBJS	= bison.o lex.o 
 
 CC	= g++
-CFLAGS	= -g -Wall -ansi -pedantic -o parser
+CFLAGS	= -g -Wall -ansi -pedantic
 
 mini_l:		$(OBJS)
 		$(CC) $(CFLAGS) $(OBJS) -o mini_l -lfl
@@ -24,4 +24,4 @@ bison.c:	mini_l.y
 		cp y.tab.h tok.h
 
 clean:
-	rm -f *.o *~ lex.c lex.yy.c bison.c y.tab.c y.tab.h y.output mini_l
+	rm -f *.o *~ lex.c lex.yy.c bison.c y.tab.c y.tab.h y.output mini_l tok.h
