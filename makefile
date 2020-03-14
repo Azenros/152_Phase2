@@ -1,27 +1,27 @@
 # Makefile
 
-OBJS    = bison.o lex.o
+OBJS	= bison.o lex.o 
 
-CC      = g++
-CFLAGS  = -g -Wall -ansi -std=c++11 -pedantic
+CC	= g++
+CFLAGS	= -g -Wall -ansi -std=c++11 -pedantic
 
-mini_l:         $(OBJS)
-                $(CC) $(CFLAGS) $(OBJS) -o mini_l -lfl
+mini_l:		$(OBJS)
+		$(CC) $(CFLAGS) $(OBJS) -o mini_l -lfl
 
-lex.o:          lex.c
-                $(CC) $(CFLAGS) -c lex.c -o lex.o
+lex.o:		lex.c
+		$(CC) $(CFLAGS) -c lex.c -o lex.o
 
-lex.c:          mini_l.lex
-                flex mini_l.lex
-                cp lex.yy.c lex.c
+lex.c:		mini_l.lex 
+		flex mini_l.lex
+		cp lex.yy.c lex.c
 
-bison.o:        bison.c
-                $(CC) $(CFLAGS) -c bison.c -o bison.o
+bison.o:	bison.c
+		$(CC) $(CFLAGS) -c bison.c -o bison.o
 
-bison.c:        mini_l.y
-                bison -d -v --file-prefix=y mini_l.y
-                cp y.tab.c bison.c
-                cp y.tab.h tok.h
+bison.c:	mini_l.y
+		bison -d -v --file-prefix=y mini_l.y
+		cp y.tab.c bison.c
+		cp y.tab.h tok.h
 
 clean:
-        rm -f *.o *~ lex.c lex.yy.c bison.c y.tab.c y.tab.h y.output mini_l tok.h
+	rm -f *.o *~ lex.c lex.yy.c bison.c y.tab.c y.tab.h y.output mini_l tok.h
