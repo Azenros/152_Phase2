@@ -2,6 +2,7 @@
 make clean
 clear
 make
+clear
 cat $1 | mini_l > $1.mil
 echo $1.mil
 echo "Running mil_run on generated mil file..."
