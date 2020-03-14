@@ -1,4 +1,5 @@
 #/bin/bash
+chmod +x mil_run
 make clean
 clear
 make
