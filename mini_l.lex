@@ -32,14 +32,14 @@ ERROR [^0-9A-Za-z)(+*/%\n\t-]
 "\t".* {yyless(1);space += tabspaces;}
 "##".* {line++; space = 0;}
 
-"function".* {yyless(9); space += 9; return FUNCTION;}
-"beginparams".* {yyless(11); space += 11; return BEGIN_PARAMS;}
-"endparams".* {yyless(9); space += 9; return END_PARAMS;}
-"beginlocals".* {yyless(11); space += 11; return BEGIN_LOCALS;}
-"endlocals".* {yyless(9); space += 9; return END_LOCALS;}
-"beginbody".* {yyless(9); space += 9; return BEGIN_BODY;}
-"endbody".* {yyless(7); space += 7; return END_BODY;}
-"integer".* {yyless(7); space += 7; return INTEGER;}
+"function" {yyless(9); space += 9; return FUNCTION;}
+"beginparams" {yyless(11); space += 11; return BEGIN_PARAMS;}
+"endparams" {yyless(9); space += 9; return END_PARAMS;}
+"beginlocals" {yyless(11); space += 11; return BEGIN_LOCALS;}
+"endlocals" {yyless(9); space += 9; return END_LOCALS;}
+"beginbody" {yyless(9); space += 9; return BEGIN_BODY;}
+"endbody" {yyless(7); space += 7; return END_BODY;}
+"integer" {yyless(7); space += 7; return INTEGER;}
 "array".* {yyless(5); space += 5; return ARRAY;}
 "of".* {yyless(3); space += 3; return OF;}
 "if".* {yyless(2); space += 2; return IF;}
