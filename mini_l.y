@@ -57,7 +57,7 @@
 %right NOT
 %left ADD SUB
 %left MULT DIV MOD 
-%left EQ NEQ LT GT LTE GTE
+%left EQ NEQ LTE GTE LT GT 
 %left ASSIGN
 
 
@@ -109,7 +109,7 @@ function:
         if (statements.find("continue") != string::npos) {
             cout << "Error: Continue outside loop in function " << $2.place << "\n";
         }
-        oss << statements << "endfunc\n";
+        oss << statements << "endfunc\n\n";
         
         string result = oss.str();
         cout << result;
@@ -191,13 +191,13 @@ declaration:
                     reserved = true;
                 }
             }
-            /*
+            
             if (variables.find(fVar) != variables.end()) {
                 ostringstream ess;
                 ess << "a Redeclaration of variable " << fVar.c_str();
                 yyerror(ess.str()); 
-            }*/
-            if (reserved) {
+            }
+            else if (reserved) {
                 ostringstream ess;
                 ess << "Invalid declaration of reserved words " << fVar.c_str();
                 yyerror(ess.str());
@@ -260,14 +260,16 @@ declaration:
 identify:
     IDENT {
         //cout << "identify -> IDENT " << $1 << endl;
-        char emess[128] = "abc";
+        ostringstream oss;
+        /*
         if (variables.find($1) != variables.end()) {
-            snprintf(emess,128,"b Redeclaration of variable %s", $1);
-            yyerror(emess);
+            oss << "b Redeclaration of variable " << $1;
+            yyerror(oss.str());
         }
         else {
             variables.insert(pair<string, int>((string)$1, 0));
         }
+        */
         $$.code = strdup("");
         $$.place = strdup($1);
     }
@@ -301,11 +303,16 @@ statements:
 
 statement:
         var ASSIGN AS_expr {
-        //cout << "statement -> var ASSIGN AS_expr\n"
+        //cout << "statement -> var ASSIGN AS_expr\n";
         string vaa = $3.place; 
         ostringstream oss;
         oss << $1.code << $3.code;
-        if ($1.is_array) { 
+        if ($1.is_array && $3.is_array) {
+            string temp = newString("__temp__");
+            oss << ". " << temp << "\n=[] " << temp 
+                << ", " << $3.place << "\n[]= ";
+        }
+        else if ($1.is_array) { 
             oss << "[]="; 
         }
         else if ($3.is_array) {
@@ -325,9 +332,12 @@ statement:
         string ifor = newString("__label__");
         string post = newString("__label__");
         ostringstream oss;
-        oss << $2.code << "?:= " << ifor << ", " << $2.place << "\n";
-        oss << ":= " << post << "\n" << ": " << ifor << "\n";
-        oss << $4.code << ": " << post << "\n";
+        
+        oss << $2.code << "?:= " << ifor << ", " << $2.place << "\n"
+            << ":= " << post << "\n" 
+            << ": " << ifor << "\n"
+            << $4.code << ": " << post << "\n";
+            
         string code = oss.str();
         $$.code = strdup(code.c_str());
     }
@@ -336,13 +346,10 @@ statement:
         string ifor = newString("__label__");
         string post = newString("__label__");
         ostringstream oss;
-        oss << $2.code
-            << "?:= " << ifor << ", " 
-            << $2.place << "\n"
+        oss << $2.code << "?:= " << ifor << ", " << $2.place << "\n"
             << $6.code << ":= " << post << "\n"
             << ": " << ifor << "\n"
-            << $4.code
-            << ": " << post << "\n";
+            << $4.code << ": " << post << "\n";
             
         string code = oss.str();
         $$.code = strdup(code.c_str());
@@ -400,8 +407,8 @@ statement:
         string code = $12.code;
         ostringstream oss;
         
-        size_t position = code.find("continue"); // find at position value of continue
-        while (position != string::npos) { // as long as its not the end of string
+        size_t position = code.find("continue"); 
+        while (position != string::npos) {
             code.replace(position, 8, ":= " + inc);
             position = code.find("continue");
         }
@@ -572,31 +579,31 @@ comp:
         //cout << "comp -> GT\n";
         string cmp = ">";
         $$.code = strdup("");
-        $$.place = strdup(">");
+        $$.place = strdup("> ");
     }
     | LT {
         //cout << "comp -> LT\n";
         string cmp = "<";
         $$.code = strdup("");
-        $$.place = strdup("<");
+        $$.place = strdup("< ");
     }
     | GTE {
         //cout << "comp -> GTE\n";
         string cmp = ">=";
         $$.code = strdup("");
-        $$.place = strdup(">=");
+        $$.place = strdup(">= ");
     }
     | LTE {
         //cout << "comp -> LTE\n";
         string cmp = "<=";
         $$.code = strdup("");
-        $$.place = strdup("<=");
+        $$.place = strdup("<= ");
     }
     | EQ {
         //cout << "comp -> EQ\n";
         string cmp = "==";
         $$.code = strdup("");
-        $$.place = strdup("==");
+        $$.place = strdup("== ");
     }
     | NEQ {
         //cout << "comp -> NEQ\n";
@@ -615,21 +622,21 @@ AS_expr:
     | MDM_expr ADD AS_expr { 
         //cout << "AS_expr -> MDM_expr ADD AS_expr\n";
         ostringstream oss;
+        $$.place = strdup(newString("__temp__").c_str());
         oss << $1.code << $3.code << ". " << $$.place << "\n+ " << $$.place 
             << ", " << $1.place << ", " << $3.place << "\n";
         string code = oss.str();
         $$.code = strdup(code.c_str());
-        $$.place = strdup(newString("__temp__").c_str());
 
     }
     | MDM_expr SUB AS_expr { 
         //cout << "AS_expr -> MDM_expr SUB AS_expr\n";
         ostringstream oss;
+        $$.place = strdup(newString("__temp__").c_str());
         oss << $1.code << $3.code << ". " << $$.place << "\n- " << $$.place 
             << ", " << $1.place << ", " << $3.place << "\n";
         string code = oss.str();
-        $$.code = strdup(code.c_str());
-        $$.place = strdup(newString("__temp__").c_str());
+        $$.code = strdup(code.c_str()); 
     }
 ;
 
@@ -642,35 +649,35 @@ MDM_expr:
     | NEG_term MOD MDM_expr { 
         //cout << "MDM_expr -> NEG_term MOD MDM_expr\n";
         ostringstream oss;
+        $$.place = strdup(newString("__temp__").c_str());
         oss << $1.code << $3.code << ". " << $$.place << "\n% " << $$.place 
             << ", " << $1.place << ", " << $3.place << "\n";
         string code = oss.str();
         $$.code = strdup(code.c_str());
-        $$.place = strdup(newString("__temp__").c_str());
     }
     | NEG_term MULT MDM_expr { 
         //cout << "MDM_expr -> NEG_term MULT MDM_expr\n";
         ostringstream oss;
+        $$.place = strdup(newString("__temp__").c_str());
         oss << $1.code << $3.code << ". " << $$.place << "\n* " << $$.place 
             << ", " << $1.place << ", " << $3.place << "\n";
         string code = oss.str();
         $$.code = strdup(code.c_str());
-        $$.place = strdup(newString("__temp__").c_str());
     }
     | NEG_term DIV MDM_expr	{ 
         //cout << "MDM_expr -> NEG_term DIV MDM_expr\n";
         ostringstream oss;
+        $$.place = strdup(newString("__temp__").c_str());
         oss << $1.code << $3.code << ". " << $$.place << "\n/ " << $$.place 
             << ", " << $1.place << ", " << $3.place << "\n";
         string code = oss.str();
         $$.code = strdup(code.c_str());
-        $$.place = strdup(newString("__temp__").c_str());
     }
 ;
 
 NEG_term:
     SUB term { 
-        //cout << "NEG_term -> SUB NEG_term\n";
+        //cout << "NEG_term -> SUB term\n";
         ostringstream oss;
         string temp = newString("__temp__");
         oss << $2.code << ". " << $$.place << "\n";
@@ -687,7 +694,7 @@ NEG_term:
         $$.is_array = false;
     }
     | term {
-        //cout << "NEG_term -> NEG_term\n";
+        //cout << "NEG_term -> term\n";
         $$.code = strdup($1.code);
         $$.place = strdup($1.place);
     }
@@ -800,30 +807,34 @@ vars:
 var:
     IDENT {
         //cout << "var -> IDENT " << ($1) << endl;
+        
+        ostringstream oss;
         /*
-        char emess[128] = "abc";
         if (variables.find($1) != variables.end()) {
-            snprintf(emess,128,"b Redeclaration of variable %s", $1);
-            yyerror(emess);
+            oss << "b Redeclaration of variable " << $1;
+            yyerror(oss.str());
         }
-        else {
-            variables.insert(pair<string, int>((string)$1, 0));
+        else if (variables.find((string)($1))->second == 0) {
+            oss << "Indexing a non-array variable " << $1;
+            yyerror(oss.str());
         }*/
+      
+        
         $$.code = strdup("");
         $$.place = strdup($1);
+        $$.is_array = false;
     }
     | IDENT L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET {
         //cout << "var -> IDENT " << ($1) << " L_SQUARE_BRACKET AS_expr R_SQUARE_BRACKET\n";
-        char emess[128] = "abc";
+        ostringstream oss;
         if (variables.find((string)($1)) == variables.end()) {
-            snprintf(emess,128,"Use of undeclared variable %s", $1);
-            yyerror(emess);
+            oss << "Use of undeclared variable " << $1;
+            yyerror(oss.str());
         }
         else if (variables.find((string)($1))->second == 0) {
-            snprintf(emess,128,"Indexing a non-array variable %s", $1);
-            yyerror(emess);
+            oss << "Indexing a non-array variable " << $1;
+            yyerror(oss.str());
         }
-        ostringstream oss;
         oss << $1 << ", " << $3.place;
         string place = oss.str();
         $$.code = strdup($3.code);
@@ -843,6 +854,7 @@ string newString(string s) {
 
 int yyerror(string s) {
     extern int line, space;
+    extern char* yytext;
     cout << "Error at line " << line << ", column " << space << ": " << s << endl;
     //exit(1);
     return 0;
